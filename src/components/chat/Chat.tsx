@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import ChatMessage from './ChatMessage';
 import { ChatMessage as ChatMessageType, ApiResponse, ChatSession } from '../../types/chat';
+import { Button, Input } from 'antd';
+import { SendOutlined } from '@ant-design/icons';
 
 const Chat: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
@@ -171,24 +173,23 @@ const Chat: React.FC = () => {
       </div>
       
       <form onSubmit={handleSubmit} className="border-t border-slate-200 bg-white p-4">
-        <div className="flex items-center bg-slate-100 rounded-lg px-3 focus-within:ring-2 focus-within:ring-purple-500 focus-within:bg-white transition">
-          <input
+        <div className="flex items-center">
+          <Input
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             placeholder="Type a message in English or European Portuguese..."
-            className="flex-1 bg-transparent px-2 py-3 focus:outline-none text-slate-700"
             disabled={isLoading}
+            className="flex-1"
           />
-          <button
-            type="submit"
-            className="ml-2 bg-purple-600 text-white p-2 rounded-full hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-purple-300 transition-colors"
+          <Button
+            type="primary"
+            htmlType="submit"
+            icon={<SendOutlined />}
+            className="ml-2"
             disabled={isLoading || !inputValue.trim()}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clipRule="evenodd" />
-            </svg>
-          </button>
+            shape="circle"
+          />
         </div>
       </form>
     </div>

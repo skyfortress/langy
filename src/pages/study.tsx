@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Card, StudySession, ReviewQuality } from "@/types/card";
 import Link from "next/link";
 import { Geist } from "next/font/google";
-import { FaVolumeUp } from "react-icons/fa";
+import { Button, Progress } from "antd";
+import { SoundOutlined, HomeOutlined } from "@ant-design/icons";
 
 const geist = Geist({
   variable: "--font-geist",
@@ -193,8 +194,8 @@ export default function Study() {
         <div className="max-w-lg mx-auto bg-white p-6 rounded-lg shadow-md">
           <h1 className="text-2xl font-bold text-slate-800 mb-4">Error</h1>
           <p className="text-slate-600 mb-6">{error}</p>
-          <Link href="/" className="text-blue-600 hover:underline">
-            Back to Home
+          <Link href="/">
+            <Button type="primary" icon={<HomeOutlined />}>Back to Home</Button>
           </Link>
         </div>
       </div>
@@ -213,17 +214,15 @@ export default function Study() {
             Your score: {stats.correct} / {stats.total} ({Math.round((stats.correct / stats.total) * 100)}%)
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
-            <button
+            <Button
+              type="primary"
               onClick={restart}
-              className="bg-emerald-600 text-white py-2 px-4 rounded-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+              style={{ backgroundColor: '#059669' }}
             >
               Study Again
-            </button>
-            <Link 
-              href="/"
-              className="text-center bg-slate-200 text-slate-800 py-2 px-4 rounded-md hover:bg-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2"
-            >
-              Back to Home
+            </Button>
+            <Link href="/">
+              <Button>Back to Home</Button>
             </Link>
           </div>
         </div>
@@ -260,13 +259,13 @@ export default function Study() {
               <div className="flex items-center justify-center gap-2">
                 <p className="text-2xl font-medium">{cardFront}</p>
                 {(session?.mode === 'front-to-back' || showAnswer) && getCurrentCard()?.audio && (
-                  <button 
+                  <Button
+                    type={isPlaying ? "primary" : "default"}
+                    shape="circle"
+                    icon={<SoundOutlined />}
                     onClick={playAudio}
-                    className={`p-2 rounded-full ${isPlaying ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'} hover:bg-blue-200 focus:outline-none`}
                     aria-label="Play pronunciation"
-                  >
-                    <FaVolumeUp className="text-lg" />
-                  </button>
+                  />
                 )}
               </div>
             </div>
@@ -279,13 +278,13 @@ export default function Study() {
                 <div className="flex items-center justify-center gap-2 mb-8">
                   <p className="text-xl font-medium">{cardBack}</p>
                   {session?.mode === 'back-to-front' && getCurrentCard()?.audio && (
-                    <button 
+                    <Button
+                      type={isPlaying ? "primary" : "default"}
+                      shape="circle"
+                      icon={<SoundOutlined />}
                       onClick={playAudio}
-                      className={`p-2 rounded-full ${isPlaying ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'} hover:bg-blue-200 focus:outline-none`}
                       aria-label="Play pronunciation"
-                    >
-                      <FaVolumeUp className="text-lg" />
-                    </button>
+                    />
                   )}
                 </div>
                 
@@ -293,15 +292,18 @@ export default function Study() {
                 
                 <div className="grid grid-cols-3 gap-3 mb-4">
                   {qualityLabels.map((option) => (
-                    <button
+                    <Button
                       key={option.value}
                       onClick={() => handleAnswer(option.value)}
-                      className={`${option.color} text-white py-3 px-2 rounded-lg hover:opacity-90 transition-all transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 flex flex-col items-center justify-center`}
+                      className={`${option.color} hover:opacity-90 transition-all transform hover:scale-105`}
+                      style={{ color: 'white', height: 'auto', padding: '12px 8px' }}
                       title={option.description}
                     >
-                      <span className="block text-xl font-bold mb-1">{option.shortcut}</span>
-                      <span className="block text-xs">{option.label}</span>
-                    </button>
+                      <div className="flex flex-col items-center">
+                        <span className="block text-xl font-bold mb-1">{option.shortcut}</span>
+                        <span className="block text-xs">{option.label}</span>
+                      </div>
+                    </Button>
                   ))}
                 </div>
                 
@@ -310,12 +312,13 @@ export default function Study() {
                 </div>
               </div>
             ) : (
-              <button
+              <Button
+                type="primary"
                 onClick={handleReveal}
-                className="bg-blue-600 text-white py-2 px-6 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                size="large"
               >
                 Show Answer
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -324,14 +327,11 @@ export default function Study() {
           <p className="text-sm text-slate-500">
             Progress: {Math.round(((session?.currentCardIndex || 0) / (session?.cards.length || 1)) * 100)}%
           </p>
-          <div className="w-full bg-slate-200 rounded-full h-2 mt-2">
-            <div
-              className="bg-blue-600 h-2 rounded-full"
-              style={{
-                width: `${Math.round(((session?.currentCardIndex || 0) / (session?.cards.length || 1)) * 100)}%`,
-              }}
-            ></div>
-          </div>
+          <Progress 
+            percent={Math.round(((session?.currentCardIndex || 0) / (session?.cards.length || 1)) * 100)} 
+            showInfo={false} 
+            strokeColor="#2563eb"
+          />
         </div>
       </div>
     </div>

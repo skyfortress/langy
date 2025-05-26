@@ -2,6 +2,7 @@ import React from 'react';
 import Head from 'next/head';
 import Chat from '../components/chat/Chat';
 import { Geist } from "next/font/google";
+import { Button } from 'antd';
 
 const geist = Geist({
   variable: "--font-geist",

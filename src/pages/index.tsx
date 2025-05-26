@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { Card } from "@/types/card";
 import Link from "next/link";
 import { Geist } from "next/font/google";
+import { Button, Input, Alert } from "antd";
+import { DeleteOutlined } from "@ant-design/icons";
 
 const geist = Geist({
   variable: "--font-geist",
@@ -99,14 +101,10 @@ export default function Home() {
         {(error || success) && (
           <div className="max-w-md mx-auto mb-6">
             {error && (
-              <div className="bg-red-100 text-red-700 p-3 rounded mb-4">
-                {error}
-              </div>
+              <Alert message={error} type="error" showIcon className="mb-4" />
             )}
             {success && (
-              <div className="bg-green-100 text-green-700 p-3 rounded mb-4">
-                {success}
-              </div>
+              <Alert message={success} type="success" showIcon className="mb-4" />
             )}
           </div>
         )}
@@ -123,14 +121,12 @@ export default function Home() {
                   >
                     Portuguese (Front)
                   </label>
-                  <input
-                    type="text"
+                  <Input
                     id="front"
                     value={cardInput.front}
                     onChange={(e) =>
                       setCardInput({ ...cardInput, front: e.target.value })
                     }
-                    className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="e.g., Bom dia"
                   />
                 </div>
@@ -142,35 +138,33 @@ export default function Home() {
                   >
                     English (Back)
                   </label>
-                  <input
-                    type="text"
+                  <Input
                     id="back"
                     value={cardInput.back}
                     onChange={(e) =>
                       setCardInput({ ...cardInput, back: e.target.value })
                     }
-                    className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="e.g., Good morning"
                   />
                 </div>
 
-                <button
-                  type="submit"
-                  className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  block
                 >
                   Add Card
-                </button>
+                </Button>
               </form>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-6">
               <div className="bg-white p-6 rounded-lg shadow-md">
                 <h2 className="text-xl font-semibold mb-4">Study Mode</h2>
-                <Link
-                  href="/study"
-                  className="block w-full bg-emerald-600 text-white text-center py-3 px-4 rounded-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 mb-4"
-                >
-                  Start Studying
+                <Link href="/study" className="block w-full mb-4">
+                  <Button type="primary" block style={{ backgroundColor: '#059669' }}>
+                    Start Studying
+                  </Button>
                 </Link>
                 <p className="text-sm text-slate-600">
                   Review cards in both Portuguese-to-English and
@@ -180,11 +174,10 @@ export default function Home() {
 
               <div className="bg-white p-6 rounded-lg shadow-md">
                 <h2 className="text-xl font-semibold mb-4">Language Chat</h2>
-                <Link
-                  href="/chat"
-                  className="block w-full bg-purple-600 text-white text-center py-3 px-4 rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 mb-4"
-                >
-                  Practice with AI Tutor
+                <Link href="/chat" className="block w-full mb-4">
+                  <Button type="primary" block style={{ backgroundColor: '#9333ea' }}>
+                    Practice with AI Tutor
+                  </Button>
                 </Link>
                 <p className="text-sm text-slate-600">
                   Chat with an AI language tutor to practice conversation skills.
@@ -241,13 +234,13 @@ export default function Home() {
                           </p>
                           <p className="text-slate-600">{card.back}</p>
                         </div>
-                        <button
+                        <Button
+                          type="text"
+                          danger
+                          icon={<DeleteOutlined />}
                           onClick={() => handleDelete(card.id)}
-                          className="text-red-600 hover:text-red-800 hover:bg-red-50 rounded-full w-6 h-6 flex items-center justify-center transition-colors"
                           aria-label="Delete card"
-                        >
-                          &times;
-                        </button>
+                        />
                       </div>
                       {card.reviewCount > 0 && (
                         <div className="mt-2 text-xs text-slate-500 flex justify-between border-t pt-2 border-slate-100">
