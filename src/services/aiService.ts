@@ -63,7 +63,7 @@ const createLanguageLearningPrompt = () => {
     learn ${language} through conversation. 
     
     Follow these guidelines:
-    1. If the user writes in English, respond with both ${language} and the English translation.
+    1. If the user writes in English, respond with both ${language} and the English translation. Try to use only known to user words.
     2. If the user writes in ${language}, gently correct any mistakes and provide the corrected version.
     3. Use simple vocabulary and gradually introduce more complex terms.
     4. Occasionally ask questions to keep the conversation going.
