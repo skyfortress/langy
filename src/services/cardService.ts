@@ -198,3 +198,23 @@ export const getStudyStatistics = () => {
     dueIn7Days
   };
 };
+
+// Get card statistics for new, learning, and due cards
+export const getCardStats = () => {
+  const cards = getAllCards();
+  const now = new Date();
+  
+  const newCards = cards.filter(card => card.reviewCount === 0);
+  const dueCards = cards.filter(card => 
+    card.nextReviewDue && new Date(card.nextReviewDue) <= now && card.repetitions > 1
+  );
+  const learningCards = cards.filter(card => 
+    card.reviewCount > 0 && card.repetitions <= 1
+  );
+
+  return {
+    new: newCards.length,
+    learn: learningCards.length,
+    due: dueCards.length
+  };
+};

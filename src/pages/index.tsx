@@ -10,16 +10,37 @@ const geist = Geist({
   subsets: ["latin"],
 });
 
+interface CardStats {
+  new: number;
+  learn: number;
+  due: number;
+}
+
 export default function Home() {
   const [cards, setCards] = useState<Card[]>([]);
   const [loading, setLoading] = useState(true);
   const [cardInput, setCardInput] = useState({ front: "", back: "" });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [cardStats, setCardStats] = useState<CardStats>({ new: 0, learn: 0, due: 0 });
 
   useEffect(() => {
     fetchCards();
+    fetchCardStats();
   }, []);
+
+  const fetchCardStats = async () => {
+    try {
+      const response = await fetch("/api/cards/stats");
+      if (!response.ok) {
+        throw new Error("Failed to fetch card statistics");
+      }
+      const stats = await response.json();
+      setCardStats(stats);
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
 
   const fetchCards = async () => {
     try {
@@ -161,6 +182,17 @@ export default function Home() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-6">
               <div className="bg-white p-6 rounded-lg shadow-md">
                 <h2 className="text-xl font-semibold mb-4">Study Mode</h2>
+                <div className="flex mb-4 justify-between text-sm">
+                  <div className="px-2 py-1 rounded bg-blue-100 text-blue-800">
+                    New: {cardStats.new}
+                  </div>
+                  <div className="px-2 py-1 rounded bg-amber-100 text-amber-800">
+                    Learn: {cardStats.learn}
+                  </div>
+                  <div className="px-2 py-1 rounded bg-green-100 text-green-800">
+                    Due: {cardStats.due}
+                  </div>
+                </div>
                 <Link href="/study" className="block w-full mb-4">
                   <Button type="primary" block style={{ backgroundColor: '#059669' }}>
                     Start Studying
