@@ -1,9 +1,37 @@
-interface TTSResponse {
-  audio: string;
-  error?: string;
-}
+import fs from 'fs';
+import path from 'path';
+import { TTSResponse, TTSQueueItem } from '@/types/tts';
 
-export const generatePortugueseAudio = async (text: string): Promise<TTSResponse> => {
+const AUDIO_DIR = path.join(process.cwd(), 'public', 'audio');
+const requestQueue: TTSQueueItem[] = [];
+let isProcessing = false;
+
+const ensureAudioDir = () => {
+  if (!fs.existsSync(AUDIO_DIR)) {
+    fs.mkdirSync(AUDIO_DIR, { recursive: true });
+  }
+};
+
+const processNextRequest = async () => {
+  if (isProcessing || requestQueue.length === 0) {
+    return;
+  }
+
+  isProcessing = true;
+  const { text, resolve, reject } = requestQueue.shift()!;
+
+  try {
+    const result = await processRequest(text);
+    resolve(result);
+  } catch (error) {
+    reject(error);
+  } finally {
+    isProcessing = false;
+    processNextRequest();
+  }
+};
+
+const processRequest = async (text: string): Promise<TTSResponse> => {
   try {
     const apiKey = process.env.ELEVENLABS_API_KEY;
     
@@ -22,23 +50,35 @@ export const generatePortugueseAudio = async (text: string): Promise<TTSResponse
         model_id: 'eleven_multilingual_v2'
       })
     });
-    console.log(response.status);
-    console.log(response.body);
+
     if (!response.ok) {
       const errorData = await response.json();
-      console.log(errorData);
       throw new Error(`ElevenLabs API error: ${errorData.detail || response.statusText}`);
     }
 
+    ensureAudioDir();
+    const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}.mp3`;
+    const filePath = path.join(AUDIO_DIR, fileName);
     const audioBuffer = await response.arrayBuffer();
-    const base64Audio = Buffer.from(audioBuffer).toString('base64');
-
-    return { audio: base64Audio };
+    
+    fs.writeFileSync(filePath, Buffer.from(audioBuffer));
+    
+    const relativePath = `/audio/${fileName}`;
+    return { audioPath: relativePath };
   } catch (error) {
     console.error('Error generating audio:', error);
     return { 
-      audio: '', 
       error: error instanceof Error ? error.message : 'Unknown error generating audio' 
     };
   }
-}
+};
+
+export const generatePortugueseAudio = async (text: string): Promise<TTSResponse> => {
+  return new Promise((resolve, reject) => {
+    requestQueue.push({ text, resolve, reject });
+    
+    if (!isProcessing) {
+      processNextRequest();
+    }
+  });
+};

@@ -54,7 +54,7 @@ export default function Study() {
     setShowAnswer(true);
     
     const card = getCurrentCard();
-    if (card?.audio && ((session?.mode === 'front-to-back') || (session?.mode === 'back-to-front'))) {
+    if (card?.audioPath && ((session?.mode === 'front-to-back') || (session?.mode === 'back-to-front'))) {
       playAudio();
     }
   };
@@ -159,15 +159,15 @@ export default function Study() {
 
   const playAudio = () => {
     const currentCard = getCurrentCard();
-    if (!currentCard?.audio) return;
+    if (!currentCard?.audioPath) return;
     
     if (!audioRef.current) {
-      audioRef.current = new Audio(`data:audio/mp3;base64,${currentCard.audio}`);
+      audioRef.current = new Audio(currentCard.audioPath);
       audioRef.current.onended = () => setIsPlaying(false);
       audioRef.current.onpause = () => setIsPlaying(false);
       audioRef.current.onplay = () => setIsPlaying(true);
     } else {
-      audioRef.current.src = `data:audio/mp3;base64,${currentCard.audio}`;
+      audioRef.current.src = currentCard.audioPath;
     }
     
     audioRef.current.play().catch(error => {
@@ -264,7 +264,7 @@ export default function Study() {
               </p>
               <div className="flex items-center justify-center gap-2">
                 <p className="text-2xl font-medium">{cardFront}</p>
-                {(session?.mode === 'front-to-back' || showAnswer) && getCurrentCard()?.audio && (
+                {(session?.mode === 'front-to-back' || showAnswer) && getCurrentCard()?.audioPath && (
                   <Button
                     type={isPlaying ? "primary" : "default"}
                     shape="circle"
@@ -283,7 +283,7 @@ export default function Study() {
                 </p>
                 <div className="flex items-center justify-center gap-2 mb-8">
                   <p className="text-xl font-medium">{cardBack}</p>
-                  {session?.mode === 'back-to-front' && getCurrentCard()?.audio && (
+                  {session?.mode === 'back-to-front' && getCurrentCard()?.audioPath && (
                     <Button
                       type={isPlaying ? "primary" : "default"}
                       shape="circle"

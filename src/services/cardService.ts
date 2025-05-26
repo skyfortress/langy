@@ -30,17 +30,8 @@ export const getAllCards = (): Card[] => {
 };
 
 // Add a new card
-export const addCard = async (card: Omit<Card, 'id' | 'reviewCount' | 'correctCount' | 'easeFactor' | 'interval' | 'repetitions' | 'audio'>): Promise<Card> => {
+export const addCard = async (card: Omit<Card, 'id' | 'reviewCount' | 'correctCount' | 'easeFactor' | 'interval' | 'repetitions' | 'audioPath'>): Promise<Card> => {
   const cards = getAllCards();
-  
-  // Generate audio for the Portuguese text
-  let audioContent = '';
-  try {
-    const audioResponse = await generatePortugueseAudio(card.front);
-    audioContent = audioResponse.audio;
-  } catch (error) {
-    console.error('Failed to generate audio:', error);
-  }
   
   const newCard: Card = {
     ...card,
@@ -49,12 +40,23 @@ export const addCard = async (card: Omit<Card, 'id' | 'reviewCount' | 'correctCo
     correctCount: 0,
     easeFactor: DEFAULT_EASE_FACTOR,
     interval: 0,
-    repetitions: 0,
-    audio: audioContent
+    repetitions: 0
   };
   
   cards.push(newCard);
   fs.writeFileSync(CARDS_FILE, JSON.stringify({ cards }, null, 2));
+  
+  // Asynchronously generate audio after card is created
+  generatePortugueseAudio(card.front)
+    .then(audioResponse => {
+      if (audioResponse.audioPath) {
+        newCard.audioPath = audioResponse.audioPath;
+        updateCard(newCard);
+      }
+    })
+    .catch(error => {
+      console.error('Failed to generate audio:', error);
+    });
   
   return newCard;
 };
