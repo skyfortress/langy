@@ -3,7 +3,9 @@ import { v4 as uuidv4 } from 'uuid';
 import ChatMessage from './ChatMessage';
 import { ChatMessage as ChatMessageType, ApiResponse, ChatSession } from '../../types/chat';
 import { Button, Input } from 'antd';
-import { SendOutlined } from '@ant-design/icons';
+import { IoSend, IoAdd } from 'react-icons/io5';
+import { BiMessageDetail } from 'react-icons/bi';
+import { IoCheckmarkCircle } from 'react-icons/io5';
 
 const Chat: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
@@ -43,6 +45,28 @@ const Chat: React.FC = () => {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages, isInitialLoad]);
+
+  const handleNewChat = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/chat/history', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json() as ChatSession;
+        setSessionId(data.id);
+        setMessages([]);
+      }
+    } catch (error) {
+      console.error('Error creating new chat session:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -131,17 +155,23 @@ const Chat: React.FC = () => {
   
   return (
     <div className="flex flex-col h-full bg-white shadow-md rounded-lg overflow-hidden border border-slate-200">
-      <div className="bg-purple-600 text-white px-6 py-4 shadow-sm">
+      <div className="bg-purple-600 text-white px-6 py-4 shadow-sm flex justify-between items-center">
         <h2 className="text-xl font-semibold">Chat in European Portuguese</h2>
+        <Button 
+          icon={<IoAdd />} 
+          onClick={handleNewChat}
+          className="bg-white text-purple-600 hover:bg-purple-50 border-white"
+          disabled={isLoading}
+        >
+          New Chat
+        </Button>
       </div>
       
       <div className="flex-1 overflow-y-auto p-6 space-y-4">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center text-slate-500 my-8 space-y-4">
             <div className="w-24 h-24 rounded-full bg-purple-100 flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-              </svg>
+              <BiMessageDetail className="h-12 w-12 text-purple-500" />
             </div>
             <div>
               <p className="text-lg font-medium text-slate-700">Start chatting to practice your European Portuguese!</p>
@@ -185,7 +215,7 @@ const Chat: React.FC = () => {
           <Button
             type="primary"
             htmlType="submit"
-            icon={<SendOutlined />}
+            icon={<IoSend />}
             className="ml-2"
             disabled={isLoading || !inputValue.trim()}
             shape="circle"

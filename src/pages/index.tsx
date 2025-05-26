@@ -3,7 +3,9 @@ import { Card } from "@/types/card";
 import Link from "next/link";
 import { Geist } from "next/font/google";
 import { Button, Input, Alert } from "antd";
-import { DeleteOutlined } from "@ant-design/icons";
+import { AiOutlineDelete } from "react-icons/ai";
+import { FiPlus } from "react-icons/fi";
+import { IoLanguage } from "react-icons/io5";
 
 const geist = Geist({
   variable: "--font-geist",
@@ -240,17 +242,7 @@ export default function Home() {
                   <p className="text-slate-600 mb-4">
                     No cards yet. Add your first card to get started!
                   </p>
-                  <svg
-                    className="w-16 h-16 text-slate-300"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
+                  <FiPlus className="w-16 h-16 text-slate-300" />
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[70vh] overflow-y-auto pr-2">
@@ -269,7 +261,7 @@ export default function Home() {
                         <Button
                           type="text"
                           danger
-                          icon={<DeleteOutlined />}
+                          icon={<AiOutlineDelete />}
                           onClick={() => handleDelete(card.id)}
                           aria-label="Delete card"
                         />

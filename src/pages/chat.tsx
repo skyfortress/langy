@@ -3,6 +3,9 @@ import Head from 'next/head';
 import Chat from '../components/chat/Chat';
 import { Geist } from "next/font/google";
 import { Button } from 'antd';
+import Link from 'next/link';
+import { IoArrowBack } from 'react-icons/io5';
+import { BiWorld } from 'react-icons/bi';
 
 const geist = Geist({
   variable: "--font-geist",
@@ -20,12 +23,15 @@ const ChatPage: React.FC = () => {
       <header className="bg-white shadow-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-slate-800 flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mr-2 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
-              </svg>
-              European Portuguese Chat
-            </h1>
+            <div className="flex items-center">
+              <Link href="/" className="mr-4">
+                <Button type="text" icon={<IoArrowBack className="h-5 w-5" />} />
+              </Link>
+              <h1 className="text-2xl font-bold text-slate-800 flex items-center">
+                <BiWorld className="h-8 w-8 mr-2 text-purple-600" />
+                European Portuguese Chat
+              </h1>
+            </div>
           </div>
         </div>
       </header>

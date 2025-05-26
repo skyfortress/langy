@@ -3,7 +3,8 @@ import { Card, StudySession, ReviewQuality } from "@/types/card";
 import Link from "next/link";
 import { Geist } from "next/font/google";
 import { Button, Progress } from "antd";
-import { SoundOutlined, HomeOutlined } from "@ant-design/icons";
+import { IoVolumeHigh } from "react-icons/io5";
+import { AiOutlineHome } from "react-icons/ai";
 
 const geist = Geist({
   variable: "--font-geist",
@@ -109,12 +110,12 @@ export default function Study() {
   };
 
   const qualityLabels = [
-    { value: ReviewQuality.CompleteBlackout, label: "Complete Blackout", description: "I don't remember seeing this at all", color: "bg-red-600", shortcut: "1" },
-    { value: ReviewQuality.IncorrectButRecognized, label: "Incorrect (Recognized)", description: "Wrong answer, but I recognized it", color: "bg-red-500", shortcut: "2" },
-    { value: ReviewQuality.IncorrectButEasyRecall, label: "Incorrect (Easy Recall)", description: "Wrong, but I almost had it", color: "bg-orange-500", shortcut: "3" },
-    { value: ReviewQuality.CorrectWithDifficulty, label: "Correct (Difficult)", description: "I got it right, but with effort", color: "bg-yellow-500", shortcut: "4" },
-    { value: ReviewQuality.CorrectWithSomeHesitation, label: "Correct (Hesitation)", description: "I recalled with slight hesitation", color: "bg-green-500", shortcut: "5" },
-    { value: ReviewQuality.PerfectRecall, label: "Perfect Recall", description: "I knew it instantly", color: "bg-emerald-600", shortcut: "6" }
+    { value: ReviewQuality.CompleteBlackout, label: "Complete Blackout", description: "I don't remember seeing this at all", color: "#dc2626", shortcut: "1" },
+    { value: ReviewQuality.IncorrectButRecognized, label: "Incorrect (Recognized)", description: "Wrong answer, but I recognized it", color: "#ef4444", shortcut: "2" },
+    { value: ReviewQuality.IncorrectButEasyRecall, label: "Incorrect (Easy Recall)", description: "Wrong, but I almost had it", color: "#f97316", shortcut: "3" },
+    { value: ReviewQuality.CorrectWithDifficulty, label: "Correct (Difficult)", description: "I got it right, but with effort", color: "#eab308", shortcut: "4" },
+    { value: ReviewQuality.CorrectWithSomeHesitation, label: "Correct (Hesitation)", description: "I recalled with slight hesitation", color: "#22c55e", shortcut: "5" },
+    { value: ReviewQuality.PerfectRecall, label: "Perfect Recall", description: "I knew it instantly", color: "#059669", shortcut: "6" }
   ];
 
   const currentCard = getCurrentCard();
@@ -195,7 +196,7 @@ export default function Study() {
           <h1 className="text-2xl font-bold text-slate-800 mb-4">Error</h1>
           <p className="text-slate-600 mb-6">{error}</p>
           <Link href="/">
-            <Button type="primary" icon={<HomeOutlined />}>Back to Home</Button>
+            <Button type="primary" icon={<AiOutlineHome />}>Back to Home</Button>
           </Link>
         </div>
       </div>
@@ -262,7 +263,7 @@ export default function Study() {
                   <Button
                     type={isPlaying ? "primary" : "default"}
                     shape="circle"
-                    icon={<SoundOutlined />}
+                    icon={<IoVolumeHigh />}
                     onClick={playAudio}
                     aria-label="Play pronunciation"
                   />
@@ -281,7 +282,7 @@ export default function Study() {
                     <Button
                       type={isPlaying ? "primary" : "default"}
                       shape="circle"
-                      icon={<SoundOutlined />}
+                      icon={<IoVolumeHigh />}
                       onClick={playAudio}
                       aria-label="Play pronunciation"
                     />
@@ -295,8 +296,8 @@ export default function Study() {
                     <Button
                       key={option.value}
                       onClick={() => handleAnswer(option.value)}
-                      className={`${option.color} hover:opacity-90 transition-all transform hover:scale-105`}
-                      style={{ color: 'white', height: 'auto', padding: '12px 8px' }}
+                      className="hover:opacity-90 transition-all transform hover:scale-105"
+                      style={{ color: 'white', height: 'auto', padding: '12px 8px', backgroundColor: option.color }}
                       title={option.description}
                     >
                       <div className="flex flex-col items-center">
