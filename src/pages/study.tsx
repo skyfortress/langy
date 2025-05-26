@@ -52,6 +52,11 @@ export default function Study() {
 
   const handleReveal = () => {
     setShowAnswer(true);
+    
+    const card = getCurrentCard();
+    if (card?.audio && ((session?.mode === 'front-to-back') || (session?.mode === 'back-to-front'))) {
+      playAudio();
+    }
   };
 
   const getCurrentCard = (): Card | null => {
