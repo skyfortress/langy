@@ -13,9 +13,9 @@ export default async function handler(
   }
 
   try {
-    const { message, language, chatHistory } = req.body as ChatCompletionRequest;
+    const { message, chatHistory } = req.body as ChatCompletionRequest;
 
-    if (!message || !language) {
+    if (!message) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
@@ -28,7 +28,6 @@ export default async function handler(
 
     const response = await generateChatCompletion({
       message,
-      language,
       chatHistory: chatHistory ? [...chatHistory, userMessage] : [userMessage]
     });
 

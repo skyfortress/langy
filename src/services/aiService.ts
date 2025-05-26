@@ -34,7 +34,8 @@ const initializeGeminiModel = () => {
 };
 
 // Create a language learning system prompt based on the target language
-const createLanguageLearningPrompt = (language: string) => {
+const createLanguageLearningPrompt = () => {
+  const language = 'European Portuguese';
   return new SystemMessage(
     `You are a helpful language tutor for ${language}. Your primary goal is to help the user 
     learn ${language} through conversation. 
@@ -83,14 +84,14 @@ export const generateChatCompletion = async (
   request: ChatCompletionRequest
 ): Promise<ChatCompletionResponse> => {
   try {
-    const { message, language, chatHistory = [] } = request;
+    const { message, chatHistory = [] } = request;
     
     // Initialize model
     const model = initializeGeminiModel();
     const modelWithTools = model.bindTools([createCardTool]);
     
     // Create messages array for the chat
-    const systemPrompt = createLanguageLearningPrompt(language);
+    const systemPrompt = createLanguageLearningPrompt();
     const langchainMessages = [systemPrompt, ...convertToChatMessages(chatHistory), new HumanMessage(message)];
     
     // Generate response

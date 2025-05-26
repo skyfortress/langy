@@ -211,7 +211,7 @@ export default function Study() {
           </div>
           <div className="text-right">
             <p className="text-xs text-slate-500">
-              Mode: {session?.mode === 'front-to-back' ? 'Portuguese → English' : 'English → Portuguese'}
+              Mode: {session?.mode === 'front-to-back' ? 'European Portuguese → English' : 'English → European Portuguese'}
             </p>
             <Link href="/" className="text-sm text-blue-600 hover:underline">
               Exit
@@ -223,7 +223,7 @@ export default function Study() {
           <div className="min-h-[200px] flex flex-col items-center justify-center">
             <div className="mb-8 text-center">
               <p className="text-slate-500 text-sm mb-2">
-                {session?.mode === 'front-to-back' ? 'Portuguese' : 'English'}
+                {session?.mode === 'front-to-back' ? 'European Portuguese' : 'English'}
               </p>
               <p className="text-2xl font-medium">{cardFront}</p>
             </div>
@@ -231,7 +231,7 @@ export default function Study() {
             {showAnswer ? (
               <div className="text-center w-full">
                 <p className="text-slate-500 text-sm mb-2">
-                  {session?.mode === 'front-to-back' ? 'English' : 'Portuguese'}
+                  {session?.mode === 'front-to-back' ? 'English' : 'European Portuguese'}
                 </p>
                 <p className="text-xl font-medium mb-8">{cardBack}</p>
                 

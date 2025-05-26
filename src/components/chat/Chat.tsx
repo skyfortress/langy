@@ -3,11 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import ChatMessage from './ChatMessage';
 import { ChatMessage as ChatMessageType, ApiResponse } from '../../types/chat';
 
-interface ChatProps {
-  language: string;
-}
-
-const Chat: React.FC<ChatProps> = ({ language }) => {
+const Chat: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -43,7 +39,6 @@ const Chat: React.FC<ChatProps> = ({ language }) => {
         },
         body: JSON.stringify({
           message: userMessage.content,
-          language,
           chatHistory: messages
         })
       });
@@ -101,7 +96,7 @@ const Chat: React.FC<ChatProps> = ({ language }) => {
   return (
     <div className="flex flex-col h-full bg-white shadow-md rounded-lg overflow-hidden border border-slate-200">
       <div className="bg-purple-600 text-white px-6 py-4 shadow-sm">
-        <h2 className="text-xl font-semibold">Chat in {language}</h2>
+        <h2 className="text-xl font-semibold">Chat in European Portuguese</h2>
       </div>
       
       <div className="flex-1 overflow-y-auto p-6 space-y-4">
@@ -113,7 +108,7 @@ const Chat: React.FC<ChatProps> = ({ language }) => {
               </svg>
             </div>
             <div>
-              <p className="text-lg font-medium text-slate-700">Start chatting to practice your {language}!</p>
+              <p className="text-lg font-medium text-slate-700">Start chatting to practice your European Portuguese!</p>
               <p className="mt-2 text-sm text-slate-500">
                 Try asking questions, practicing sentences, or learning about culture.
               </p>
@@ -147,7 +142,7 @@ const Chat: React.FC<ChatProps> = ({ language }) => {
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            placeholder={`Type a message in English or ${language}...`}
+            placeholder="Type a message in English or European Portuguese..."
             className="flex-1 bg-transparent px-2 py-3 focus:outline-none text-slate-700"
             disabled={isLoading}
           />

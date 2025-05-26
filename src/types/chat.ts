@@ -44,7 +44,6 @@ export interface ChatSession {
 
 export interface ChatCompletionRequest {
   message: string;
-  language: string;
   chatHistory?: ChatMessage[];
 }
 
