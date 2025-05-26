@@ -1,0 +1,16 @@
+{
+  "cards": [
+    {
+      "front": "Bom dia",
+      "back": "Good morning",
+      "id": "1748218144864",
+      "reviewCount": 2,
+      "correctCount": 2,
+      "nextReviewDue": null,
+      "lastReviewed": "2025-05-26T00:17:36.287Z",
+      "easeFactor": null,
+      "repetitions": null,
+      "interval": null
+    }
+  ]
+}

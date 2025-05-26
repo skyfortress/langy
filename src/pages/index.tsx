@@ -1,115 +1,238 @@
-import Image from "next/image";
-import { Geist, Geist_Mono } from "next/font/google";
+import { useState, useEffect } from "react";
+import { Card } from "@/types/card";
+import Link from "next/link";
+import { Geist } from "next/font/google";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const geist = Geist({
+  variable: "--font-geist",
   subsets: ["latin"],
 });
 
 export default function Home() {
+  const [cards, setCards] = useState<Card[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [cardInput, setCardInput] = useState({ front: "", back: "" });
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  useEffect(() => {
+    fetchCards();
+  }, []);
+
+  const fetchCards = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch("/api/cards");
+      if (!response.ok) {
+        throw new Error("Failed to fetch cards");
+      }
+      const data = await response.json();
+      setCards(data);
+    } catch (error) {
+      console.error("Error:", error);
+      setError("Failed to load cards");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+
+    if (!cardInput.front.trim() || !cardInput.back.trim()) {
+      setError("Both Portuguese and English texts are required");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/cards/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(cardInput),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create card");
+      }
+
+      setCardInput({ front: "", back: "" });
+      setSuccess("Card added successfully!");
+      fetchCards();
+    } catch (error) {
+      console.error("Error:", error);
+      setError("Failed to add card");
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      const response = await fetch(`/api/cards/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete card");
+      }
+
+      setSuccess("Card deleted successfully!");
+      fetchCards();
+    } catch (error) {
+      console.error("Error:", error);
+      setError("Failed to delete card");
+    }
+  };
+
   return (
-    <div
-      className={`${geistSans.className} ${geistMono.className} grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]`}
-    >
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/pages/index.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className={`${geist.className} min-h-screen bg-slate-50 p-4 md:p-8`}>
+      <div className="max-w-4xl mx-auto">
+        <header className="mb-8">
+          <h1 className="text-3xl font-bold text-slate-800 mb-2">
+            🇧🇷 Langy: Portuguese Flashcards
+          </h1>
+          <p className="text-slate-600">Learn Portuguese with spaced repetition</p>
+        </header>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div>
+            <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+              <h2 className="text-xl font-semibold mb-4">Add New Card</h2>
+              {error && (
+                <div className="bg-red-100 text-red-700 p-3 rounded mb-4">
+                  {error}
+                </div>
+              )}
+              {success && (
+                <div className="bg-green-100 text-green-700 p-3 rounded mb-4">
+                  {success}
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit}>
+                <div className="mb-4">
+                  <label
+                    htmlFor="front"
+                    className="block text-sm font-medium text-slate-700 mb-1"
+                  >
+                    Portuguese (Front)
+                  </label>
+                  <input
+                    type="text"
+                    id="front"
+                    value={cardInput.front}
+                    onChange={(e) =>
+                      setCardInput({ ...cardInput, front: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="e.g., Bom dia"
+                  />
+                </div>
+
+                <div className="mb-4">
+                  <label
+                    htmlFor="back"
+                    className="block text-sm font-medium text-slate-700 mb-1"
+                  >
+                    English (Back)
+                  </label>
+                  <input
+                    type="text"
+                    id="back"
+                    value={cardInput.back}
+                    onChange={(e) =>
+                      setCardInput({ ...cardInput, back: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="e.g., Good morning"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                >
+                  Add Card
+                </button>
+              </form>
+            </div>
+
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <h2 className="text-xl font-semibold mb-4">Study</h2>
+              <Link
+                href="/study"
+                className="block w-full bg-emerald-600 text-white text-center py-3 px-4 rounded-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+              >
+                Start Studying
+              </Link>
+              <p className="mt-3 text-sm text-slate-600">
+                Cards will be presented in both Portuguese-to-English and
+                English-to-Portuguese modes.
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <h2 className="text-xl font-semibold mb-4">
+                Your Flashcards ({cards.length})
+              </h2>
+
+              {loading ? (
+                <p className="text-slate-600">Loading cards...</p>
+              ) : cards.length === 0 ? (
+                <p className="text-slate-600">
+                  No cards yet. Add your first card to get started!
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {cards.map((card) => (
+                    <div
+                      key={card.id}
+                      className="border border-slate-200 rounded-md p-4"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <p className="font-semibold text-slate-800">
+                            {card.front}
+                          </p>
+                          <p className="text-slate-600">{card.back}</p>
+                        </div>
+                        <button
+                          onClick={() => handleDelete(card.id)}
+                          className="text-red-600 hover:text-red-800"
+                          aria-label="Delete card"
+                        >
+                          &times;
+                        </button>
+                      </div>
+                      {card.reviewCount > 0 && (
+                        <div className="mt-2 text-xs text-slate-500">
+                          <p>
+                            Reviews: {card.reviewCount} | Success rate:{" "}
+                            {Math.round(
+                              (card.correctCount / card.reviewCount) * 100
+                            )}
+                            %
+                          </p>
+                          <p>
+                            Last reviewed:{" "}
+                            {card.lastReviewed
+                              ? new Date(card.lastReviewed).toLocaleDateString()
+                              : "Never"}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </div>
     </div>
   );
 }
