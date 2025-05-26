@@ -3,6 +3,7 @@ import { generateChatCompletion } from '../../../services/aiService';
 import { addCard } from '../../../services/cardService';
 import { ChatCompletionRequest, ToolCall } from '../../../types/chat';
 import { v4 as uuidv4 } from 'uuid';
+import { getChatSession, createChatSession, updateChatSession } from '../../../services/chatHistoryService';
 
 export default async function handler(
   req: NextApiRequest,
@@ -13,11 +14,21 @@ export default async function handler(
   }
 
   try {
-    const { message, chatHistory } = req.body as ChatCompletionRequest;
+    const { message, chatHistory, sessionId } = req.body as ChatCompletionRequest & { sessionId?: string };
 
     if (!message) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
+
+    // Get or create chat session
+    let session = sessionId ? getChatSession(sessionId) : null;
+    if (!session) {
+      session = createChatSession();
+    }
+
+    // If we have a chat history from the client, use it for generating the response
+    // Otherwise, use the persisted history from the session
+    const historyToUse = chatHistory || session.messages;
 
     const userMessage = {
       id: uuidv4(),
@@ -28,15 +39,30 @@ export default async function handler(
 
     const response = await generateChatCompletion({
       message,
-      chatHistory: chatHistory ? [...chatHistory, userMessage] : [userMessage]
+      chatHistory: historyToUse ? [...historyToUse, userMessage] : [userMessage]
     });
 
     const processedToolCalls = await processToolCalls(response.message.toolCalls);
 
+    // Update chat history in the session
+    const updatedMessages = [
+      ...(historyToUse || []),
+      userMessage,
+      response.message
+    ];
+    
+    // Persist to filesystem
+    const updatedSession = updateChatSession(session.id, updatedMessages);
+    
+    if (!updatedSession) {
+      console.error('Failed to update chat session');
+    }
+
     return res.status(200).json({
       userMessage,
       assistantMessage: response.message,
-      processedToolCalls
+      processedToolCalls,
+      sessionId: session.id
     });
   } catch (error) {
     console.error('Error in chat completion endpoint:', error);

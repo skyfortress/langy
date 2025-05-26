@@ -1,17 +1,46 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import ChatMessage from './ChatMessage';
-import { ChatMessage as ChatMessageType, ApiResponse } from '../../types/chat';
+import { ChatMessage as ChatMessageType, ApiResponse, ChatSession } from '../../types/chat';
 
 const Chat: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    const loadChatHistory = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/chat/history');
+        
+        if (response.ok) {
+          const data = await response.json() as ChatSession;
+          
+          if (data.id) {
+            setSessionId(data.id);
+            setMessages(data.messages);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading chat history:', error);
+      } finally {
+        setIsLoading(false);
+        setIsInitialLoad(false);
+      }
+    };
+
+    loadChatHistory();
+  }, []);
+
+  useEffect(() => {
+    if (!isInitialLoad) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, isInitialLoad]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,7 +68,8 @@ const Chat: React.FC = () => {
         },
         body: JSON.stringify({
           message: userMessage.content,
-          chatHistory: messages
+          chatHistory: messages,
+          sessionId
         })
       });
       
@@ -47,10 +77,14 @@ const Chat: React.FC = () => {
         throw new Error('Failed to get response');
       }
       
-      const data = await response.json() as ApiResponse;
+      const data = await response.json() as ApiResponse & { sessionId: string };
+      
+      if (!sessionId && data.sessionId) {
+        setSessionId(data.sessionId);
+      }
+      
       const assistantMessage = data.assistantMessage;
       
-      // Flash card creation notification
       if (assistantMessage.toolCalls && assistantMessage.toolCalls.length > 0) {
         const cardCount = assistantMessage.toolCalls.filter(tool => tool.type === 'createCard').length;
         if (cardCount > 0) {
