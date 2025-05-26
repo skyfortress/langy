@@ -4,6 +4,7 @@ import { ChatMessage, ChatCompletionRequest, ChatCompletionResponse, ToolCall, C
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 import { tool } from "@langchain/core/tools";
+import { getAllCards } from "./cardService";
 
 const createCardTool = tool(
   ({ word, translation, context }: CreateCardParameters) => {
@@ -25,6 +26,25 @@ const createCardTool = tool(
   }
 );
 
+// Format flashcards as context for the AI model
+const formatFlashcardsContext = () => {
+  const cards = getAllCards();
+  
+  if (!cards || cards.length === 0) {
+    return "";
+  }
+  
+  const flashcardEntries = cards.map(card => `${card.front} = ${card.back}`);
+  
+  return `
+Here are the vocabulary flashcards that the user has already created:
+
+${flashcardEntries.join('\n')}
+
+When responding to the user, you can refer to these existing vocabulary words. Consider these words already familiar to the user.
+`;
+};
+
 // Initialize the Gemini model
 const initializeGeminiModel = () => {
   return new ChatGoogleGenerativeAI({
@@ -36,6 +56,8 @@ const initializeGeminiModel = () => {
 // Create a language learning system prompt based on the target language
 const createLanguageLearningPrompt = () => {
   const language = 'European Portuguese';
+  const flashcardsContext = formatFlashcardsContext();
+  
   return new SystemMessage(
     `You are a helpful language tutor for ${language}. Your primary goal is to help the user 
     learn ${language} through conversation. 
@@ -49,8 +71,11 @@ const createLanguageLearningPrompt = () => {
     6. If the user asks about grammar rules, explain them clearly with examples.
     7. If the user seems to struggle, offer encouragement and simplify your language.
     8. Identify important vocabulary words that might be new to the learner. For each new word, use the createCard tool to create a flashcard.
+    9. Verbs flash cards should be created per each form, example one card is "ir - go" and other "Eu vou - I go", "Tu vais - you go" and so on.
     
-    Remember, the goal is to make learning ${language} enjoyable and effective!`
+    Remember, the goal is to make learning ${language} enjoyable and effective!
+    
+    ${flashcardsContext}`
   );
 };
 
