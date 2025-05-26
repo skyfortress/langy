@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { Card, ReviewQuality } from '@/types/card';
+import { generatePortugueseAudio } from './ttsService';
 
 // File path for storing cards
 const DATA_DIR = path.join(process.cwd(), 'data');
@@ -29,8 +30,17 @@ export const getAllCards = (): Card[] => {
 };
 
 // Add a new card
-export const addCard = (card: Omit<Card, 'id' | 'reviewCount' | 'correctCount' | 'easeFactor' | 'interval' | 'repetitions'>): Card => {
+export const addCard = async (card: Omit<Card, 'id' | 'reviewCount' | 'correctCount' | 'easeFactor' | 'interval' | 'repetitions' | 'audio'>): Promise<Card> => {
   const cards = getAllCards();
+  
+  // Generate audio for the Portuguese text
+  let audioContent = '';
+  try {
+    const audioResponse = await generatePortugueseAudio(card.front);
+    audioContent = audioResponse.audio;
+  } catch (error) {
+    console.error('Failed to generate audio:', error);
+  }
   
   const newCard: Card = {
     ...card,
@@ -39,7 +49,8 @@ export const addCard = (card: Omit<Card, 'id' | 'reviewCount' | 'correctCount' |
     correctCount: 0,
     easeFactor: DEFAULT_EASE_FACTOR,
     interval: 0,
-    repetitions: 0
+    repetitions: 0,
+    audio: audioContent
   };
   
   cards.push(newCard);

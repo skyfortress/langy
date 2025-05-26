@@ -1,5 +1,7 @@
 import React from 'react';
 import { ChatMessage as ChatMessageType, ToolCall } from '../../types/chat';
+import ReactMarkdown from 'react-markdown';
+import { FiFile, FiSearch, FiUser } from 'react-icons/fi';
 
 interface ChatMessageProps {
   message: ChatMessageType;
@@ -12,9 +14,7 @@ const ToolCallDisplay: React.FC<{ toolCall: ToolCall }> = ({ toolCall }) => {
     return (
       <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-md">
         <div className="flex items-center text-sm text-green-800">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
-            <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" />
-          </svg>
+          <FiFile className="h-4 w-4 mr-2" />
           <span className="font-medium">Flashcard created:</span>
         </div>
         <div className="mt-1 flex flex-col gap-1">
@@ -48,10 +48,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
       {!isUser && (
         <div className="flex-shrink-0 mr-3">
           <div className="w-9 h-9 rounded-full bg-purple-600 flex items-center justify-center text-white">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a4 4 0 00-3.446 6.032l-2.261 2.26a1 1 0 101.414 1.415l2.261-2.261A4 4 0 1011 5z" clipRule="evenodd" />
-            </svg>
+            <FiSearch className="h-5 w-5" />
           </div>
         </div>
       )}
@@ -61,7 +58,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
           ? 'bg-purple-600 text-white shadow-sm' 
           : 'bg-slate-100 border border-slate-200 shadow-sm'
       }`}>
-        <p className="whitespace-pre-wrap text-sm md:text-base">{message.content}</p>
+        <p className="text-sm md:text-base">
+        <ReactMarkdown>{message.content}</ReactMarkdown>
+        </p>
         
         {!isUser && message.toolCalls && message.toolCalls.length > 0 && (
           <div className="mt-2 space-y-2">
@@ -79,9 +78,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
       {isUser && (
         <div className="flex-shrink-0 ml-3">
           <div className="w-9 h-9 rounded-full bg-slate-300 flex items-center justify-center text-white">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-600" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-            </svg>
+            <FiUser className="h-5 w-5 text-slate-600" />
           </div>
         </div>
       )}

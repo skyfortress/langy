@@ -2,6 +2,7 @@ export interface Card {
   id: string;
   front: string; // Portuguese
   back: string;  // English
+  audio?: string; // Base64 encoded audio of Portuguese pronunciation
   lastReviewed?: Date;
   nextReviewDue?: Date;
   reviewCount: number;

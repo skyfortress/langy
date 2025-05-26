@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Card, StudySession, ReviewQuality } from "@/types/card";
 import Link from "next/link";
 import { Geist } from "next/font/google";
+import { FaVolumeUp } from "react-icons/fa";
 
 const geist = Geist({
   variable: "--font-geist",
@@ -15,6 +16,8 @@ export default function Study() {
   const [showAnswer, setShowAnswer] = useState(false);
   const [completed, setCompleted] = useState(false);
   const [stats, setStats] = useState({ total: 0, correct: 0 });
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {
     fetchStudySession();
@@ -147,6 +150,35 @@ export default function Study() {
     };
   }, [handleKeyPress]);
 
+  const playAudio = () => {
+    const currentCard = getCurrentCard();
+    if (!currentCard?.audio) return;
+    
+    if (!audioRef.current) {
+      audioRef.current = new Audio(`data:audio/mp3;base64,${currentCard.audio}`);
+      audioRef.current.onended = () => setIsPlaying(false);
+      audioRef.current.onpause = () => setIsPlaying(false);
+      audioRef.current.onplay = () => setIsPlaying(true);
+    } else {
+      audioRef.current.src = `data:audio/mp3;base64,${currentCard.audio}`;
+    }
+    
+    audioRef.current.play().catch(error => {
+      console.error('Failed to play audio:', error);
+    });
+  };
+
+  useEffect(() => {
+    // Reset audio when card changes
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+        setIsPlaying(false);
+      }
+    };
+  }, [session?.currentCardIndex]);
+
   if (loading) {
     return (
       <div className={`${geist.className} min-h-screen bg-slate-50 p-4 md:p-8 flex items-center justify-center`}>
@@ -225,7 +257,18 @@ export default function Study() {
               <p className="text-slate-500 text-sm mb-2">
                 {session?.mode === 'front-to-back' ? 'European Portuguese' : 'English'}
               </p>
-              <p className="text-2xl font-medium">{cardFront}</p>
+              <div className="flex items-center justify-center gap-2">
+                <p className="text-2xl font-medium">{cardFront}</p>
+                {(session?.mode === 'front-to-back' || showAnswer) && getCurrentCard()?.audio && (
+                  <button 
+                    onClick={playAudio}
+                    className={`p-2 rounded-full ${isPlaying ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'} hover:bg-blue-200 focus:outline-none`}
+                    aria-label="Play pronunciation"
+                  >
+                    <FaVolumeUp className="text-lg" />
+                  </button>
+                )}
+              </div>
             </div>
 
             {showAnswer ? (
@@ -233,7 +276,18 @@ export default function Study() {
                 <p className="text-slate-500 text-sm mb-2">
                   {session?.mode === 'front-to-back' ? 'English' : 'European Portuguese'}
                 </p>
-                <p className="text-xl font-medium mb-8">{cardBack}</p>
+                <div className="flex items-center justify-center gap-2 mb-8">
+                  <p className="text-xl font-medium">{cardBack}</p>
+                  {session?.mode === 'back-to-front' && getCurrentCard()?.audio && (
+                    <button 
+                      onClick={playAudio}
+                      className={`p-2 rounded-full ${isPlaying ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'} hover:bg-blue-200 focus:outline-none`}
+                      aria-label="Play pronunciation"
+                    >
+                      <FaVolumeUp className="text-lg" />
+                    </button>
+                  )}
+                </div>
                 
                 <p className="text-sm text-slate-600 mb-4">How well did you know this card?</p>
                 

@@ -13,9 +13,12 @@
     "@langchain/core": "^0.3.48",
     "@langchain/google-genai": "^0.2.9",
     "@types/uuid": "^10.0.0",
+    "antd": "^5.25.3",
+    "elevenlabs-node": "^2.0.3",
     "next": "15.3.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-icons": "^5.5.0",
     "react-markdown": "^10.1.0",
     "uuid": "^11.1.0"
   },

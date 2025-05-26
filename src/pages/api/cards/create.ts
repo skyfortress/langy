@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { addCard } from '@/services/cardService';
 
-export default function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'POST') {
     try {
       const { front, back } = req.body;
@@ -10,7 +10,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
         return res.status(400).json({ error: 'Front and back text are required' });
       }
       
-      const newCard = addCard({ front, back });
+      const newCard = await addCard({ front, back });
       res.status(201).json(newCard);
     } catch (error) {
       console.error('Error creating card:', error);
