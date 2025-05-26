@@ -5,7 +5,6 @@ import { ChatMessage as ChatMessageType, ApiResponse, ChatSession } from '../../
 import { Button, Input } from 'antd';
 import { IoSend, IoAdd } from 'react-icons/io5';
 import { BiMessageDetail } from 'react-icons/bi';
-import { IoCheckmarkCircle } from 'react-icons/io5';
 
 const Chat: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
@@ -14,6 +13,14 @@ const Chat: React.FC = () => {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  const predefinedMessages = [
+    "Create a flashcard for ",
+    "Let's model a situation: ",
+    "How do I say ",
+    "Translate this phrase: ",
+    "Explain this grammar concept: "
+  ];
 
   useEffect(() => {
     const loadChatHistory = async () => {
@@ -153,6 +160,10 @@ const Chat: React.FC = () => {
     }
   };
   
+  const handlePredefinedMessage = (message: string) => {
+    setInputValue(message);
+  };
+  
   return (
     <div className="flex flex-col h-full bg-white shadow-md rounded-lg overflow-hidden border border-slate-200">
       <div className="bg-purple-600 text-white px-6 py-4 shadow-sm flex justify-between items-center">
@@ -200,6 +211,19 @@ const Chat: React.FC = () => {
           </div>
         )}
         <div ref={messagesEndRef} />
+      </div>
+      
+      <div className="flex flex-wrap gap-2 px-4 py-3 bg-purple-50 border-t border-purple-100">
+        {predefinedMessages.map((message, index) => (
+          <Button
+            key={index}
+            onClick={() => handlePredefinedMessage(message)}
+            className="text-purple-600 border-purple-200 hover:bg-purple-100"
+            disabled={isLoading}
+          >
+            {message}
+          </Button>
+        ))}
       </div>
       
       <form onSubmit={handleSubmit} className="border-t border-slate-200 bg-white p-4">

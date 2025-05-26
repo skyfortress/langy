@@ -71,7 +71,7 @@ const createLanguageLearningPrompt = () => {
     6. If the user asks about grammar rules, explain them clearly with examples.
     7. If the user seems to struggle, offer encouragement and simplify your language.
     8. Identify important vocabulary words that might be new to the learner. For each new word, use the createCard tool to create a flashcard.
-    9. Verbs flash cards should be created per each form, example one card is "ir - go" and other "Eu vou - I go", "Tu vais - you go" and so on.
+    9. Verbs flash cards should be created per each common conjugation, example one card is "ir - go" and other "Eu vou - I go", "Tu vais - you go" and so on.
     
     Remember, the goal is to make learning ${language} enjoyable and effective!
     

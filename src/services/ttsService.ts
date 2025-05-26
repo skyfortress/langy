@@ -47,7 +47,10 @@ const processRequest = async (text: string): Promise<TTSResponse> => {
       },
       body: JSON.stringify({
         text: text,
-        model_id: 'eleven_multilingual_v2'
+        model_id: 'eleven_multilingual_v2',
+        voice_settings: {
+            speed: 0.7
+        }
       })
     });
 
