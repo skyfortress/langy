@@ -4,13 +4,65 @@
       "front": "Bom dia",
       "back": "Good morning",
       "id": "1748218144864",
+      "reviewCount": 4,
+      "correctCount": 4,
+      "nextReviewDue": "2025-06-01T00:52:19.878Z",
+      "lastReviewed": "2025-05-26T00:52:19.878Z",
+      "easeFactor": 1.4000000000000001,
+      "repetitions": 2,
+      "interval": 6
+    },
+    {
+      "front": "ser",
+      "back": "to be",
+      "id": "1748220470198",
       "reviewCount": 2,
       "correctCount": 2,
-      "nextReviewDue": null,
-      "lastReviewed": "2025-05-26T00:17:36.287Z",
-      "easeFactor": null,
-      "repetitions": null,
-      "interval": null
+      "easeFactor": 2.6,
+      "interval": 6,
+      "repetitions": 2,
+      "nextReviewDue": "2025-06-01T00:52:17.947Z",
+      "lastReviewed": "2025-05-26T00:52:17.947Z"
+    },
+    {
+      "front": "Ser",
+      "back": "to be (permanent)",
+      "id": "1748220814663",
+      "reviewCount": 0,
+      "correctCount": 0,
+      "easeFactor": 2.5,
+      "interval": 0,
+      "repetitions": 0
+    },
+    {
+      "front": "Estar",
+      "back": "to be (temporary)",
+      "id": "1748220814663",
+      "reviewCount": 0,
+      "correctCount": 0,
+      "easeFactor": 2.5,
+      "interval": 0,
+      "repetitions": 0
+    },
+    {
+      "front": "Ir",
+      "back": "to go",
+      "id": "1748220814663",
+      "reviewCount": 0,
+      "correctCount": 0,
+      "easeFactor": 2.5,
+      "interval": 0,
+      "repetitions": 0
+    },
+    {
+      "front": "falar",
+      "back": "to speak",
+      "id": "1748221024019",
+      "reviewCount": 0,
+      "correctCount": 0,
+      "easeFactor": 2.5,
+      "interval": 0,
+      "repetitions": 0
     }
   ]
 }

@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { generateChatCompletion } from '../../../services/aiService';
-import { ChatCompletionRequest, ChatCompletionResponse } from '../../../types/chat';
+import { addCard } from '../../../services/cardService';
+import { ChatCompletionRequest, ToolCall } from '../../../types/chat';
 import { v4 as uuidv4 } from 'uuid';
 
 export default async function handler(
@@ -18,7 +19,6 @@ export default async function handler(
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
-    // Process the user message
     const userMessage = {
       id: uuidv4(),
       role: 'user' as const,
@@ -26,19 +26,61 @@ export default async function handler(
       timestamp: new Date()
     };
 
-    // Generate AI response
     const response = await generateChatCompletion({
       message,
       language,
       chatHistory: chatHistory ? [...chatHistory, userMessage] : [userMessage]
     });
 
+    const processedToolCalls = await processToolCalls(response.message.toolCalls);
+
     return res.status(200).json({
       userMessage,
-      assistantMessage: response.message
+      assistantMessage: response.message,
+      processedToolCalls
     });
   } catch (error) {
     console.error('Error in chat completion endpoint:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
+}
+
+async function processToolCalls(toolCalls?: ToolCall[]) {
+  if (!toolCalls || toolCalls.length === 0) {
+    return [];
+  }
+
+  const results = [];
+
+  for (const call of toolCalls) {
+    if (call.name === 'createCard') {
+      const { word, translation } = call.args;
+      
+      try {
+        const newCard = addCard({
+          front: word,
+          back: translation
+        });
+        
+        results.push({
+          id: call.id,
+          type: call.type,
+          name: call.name,
+          status: 'success',
+          result: newCard
+        });
+      } catch (error) {
+        console.error('Error creating card:', error);
+        results.push({
+          id: call.id,
+          type: call.type,
+          name: call.name,
+          status: 'error',
+          error: 'Failed to create card'
+        });
+      }
+    }
+  }
+  
+  return results;
 }

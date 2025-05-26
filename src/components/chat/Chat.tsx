@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import ChatMessage from './ChatMessage';
-import { ChatMessage as ChatMessageType } from '../../types/chat';
+import { ChatMessage as ChatMessageType, ApiResponse } from '../../types/chat';
 
 interface ChatProps {
   language: string;
@@ -52,8 +52,34 @@ const Chat: React.FC<ChatProps> = ({ language }) => {
         throw new Error('Failed to get response');
       }
       
-      const data = await response.json();
+      const data = await response.json() as ApiResponse;
       const assistantMessage = data.assistantMessage;
+      
+      // Flash card creation notification
+      if (assistantMessage.toolCalls && assistantMessage.toolCalls.length > 0) {
+        const cardCount = assistantMessage.toolCalls.filter(tool => tool.type === 'createCard').length;
+        if (cardCount > 0) {
+          const notification = document.createElement('div');
+          notification.className = 'fixed bottom-4 right-4 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded shadow-md';
+          notification.innerHTML = `
+            <div class="flex">
+              <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                </svg>
+              </div>
+              <div class="ml-3">
+                <p class="text-sm">${cardCount} new flashcard${cardCount > 1 ? 's' : ''} created from your conversation!</p>
+              </div>
+            </div>
+          `;
+          document.body.appendChild(notification);
+          
+          setTimeout(() => {
+            notification.remove();
+          }, 5000);
+        }
+      }
       
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
@@ -90,6 +116,9 @@ const Chat: React.FC<ChatProps> = ({ language }) => {
               <p className="text-lg font-medium text-slate-700">Start chatting to practice your {language}!</p>
               <p className="mt-2 text-sm text-slate-500">
                 Try asking questions, practicing sentences, or learning about culture.
+              </p>
+              <p className="mt-1 text-sm text-purple-600 font-medium">
+                New words will automatically be saved as flashcards.
               </p>
             </div>
           </div>

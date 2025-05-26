@@ -1,9 +1,44 @@
 import React from 'react';
-import { ChatMessage as ChatMessageType } from '../../types/chat';
+import { ChatMessage as ChatMessageType, ToolCall } from '../../types/chat';
 
 interface ChatMessageProps {
   message: ChatMessageType;
 }
+
+const ToolCallDisplay: React.FC<{ toolCall: ToolCall }> = ({ toolCall }) => {
+  if (toolCall.name === 'createCard') {
+    const { word, translation, context } = toolCall.args;
+    
+    return (
+      <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-md">
+        <div className="flex items-center text-sm text-green-800">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" />
+          </svg>
+          <span className="font-medium">Flashcard created:</span>
+        </div>
+        <div className="mt-1 flex flex-col gap-1">
+          <div className="flex">
+            <span className="text-sm font-medium w-24">Word:</span>
+            <span className="text-sm">{word}</span>
+          </div>
+          <div className="flex">
+            <span className="text-sm font-medium w-24">Translation:</span>
+            <span className="text-sm">{translation}</span>
+          </div>
+          {context && (
+            <div className="flex">
+              <span className="text-sm font-medium w-24">Context:</span>
+              <span className="text-sm">{context}</span>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+  
+  return null;
+};
 
 const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
   const isUser = message.role === 'user';
@@ -27,6 +62,15 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
           : 'bg-slate-100 border border-slate-200 shadow-sm'
       }`}>
         <p className="whitespace-pre-wrap text-sm md:text-base">{message.content}</p>
+        
+        {!isUser && message.toolCalls && message.toolCalls.length > 0 && (
+          <div className="mt-2 space-y-2">
+            {message.toolCalls.map(toolCall => (
+              <ToolCallDisplay key={toolCall.id} toolCall={toolCall} />
+            ))}
+          </div>
+        )}
+        
         <div className={`text-xs mt-1 ${isUser ? 'text-purple-200' : 'text-slate-500'}`}>
           {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </div>
