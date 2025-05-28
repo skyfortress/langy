@@ -47,16 +47,16 @@ export const addCard = async (card: Omit<Card, 'id' | 'reviewCount' | 'correctCo
   fs.writeFileSync(CARDS_FILE, JSON.stringify({ cards }, null, 2));
   
   // Asynchronously generate audio after card is created
-  generatePortugueseAudio(card.front)
-    .then(audioResponse => {
-      if (audioResponse.audioPath) {
-        newCard.audioPath = audioResponse.audioPath;
-        updateCard(newCard);
-      }
-    })
-    .catch(error => {
-      console.error('Failed to generate audio:', error);
-    });
+  // generatePortugueseAudio(card.front)
+  //   .then(audioResponse => {
+  //     if (audioResponse.audioPath) {
+  //       newCard.audioPath = audioResponse.audioPath;
+  //       updateCard(newCard);
+  //     }
+  //   })
+  //   .catch(error => {
+  //     console.error('Failed to generate audio:', error);
+  //   });
   
   return newCard;
 };

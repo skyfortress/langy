@@ -1,6 +1,15 @@
 import fs from 'fs';
 import path from 'path';
 import { TTSResponse, TTSQueueItem } from '@/types/tts';
+import { 
+  PollyClient, 
+  SynthesizeSpeechCommand, 
+  Engine, 
+  OutputFormat, 
+  TextType, 
+  VoiceId,
+  LanguageCode
+} from '@aws-sdk/client-polly';
 
 const AUDIO_DIR = path.join(process.cwd(), 'public', 'audio');
 const requestQueue: TTSQueueItem[] = [];
@@ -33,38 +42,30 @@ const processNextRequest = async () => {
 
 const processRequest = async (text: string): Promise<TTSResponse> => {
   try {
-    const apiKey = process.env.ELEVENLABS_API_KEY;
-    
-    if (!apiKey) {
-      throw new Error('ELEVENLABS_API_KEY is not set in environment variables');
-    }
+    const pollyClient = new PollyClient();
 
-    const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/iP95p4xoKVk53GoZ742B?output_format=mp3_44100_128', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'xi-api-key': apiKey
-      },
-      body: JSON.stringify({
-        text: text,
-        model_id: 'eleven_multilingual_v2',
-        voice_settings: {
-            speed: 0.7
-        }
-      })
-    });
+    const params = {
+      Engine: 'standard' as Engine,
+      LanguageCode: 'pt-PT' as LanguageCode,
+      OutputFormat: 'mp3' as OutputFormat,
+      Text: text,
+      TextType: 'text' as TextType,
+      VoiceId: 'Cristiano' as VoiceId
+    };
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`ElevenLabs API error: ${errorData.detail || response.statusText}`);
+    const command = new SynthesizeSpeechCommand(params);
+    const response = await pollyClient.send(command);
+
+    if (!response.AudioStream) {
+      throw new Error('No audio stream returned from AWS Polly');
     }
 
     ensureAudioDir();
     const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}.mp3`;
     const filePath = path.join(AUDIO_DIR, fileName);
-    const audioBuffer = await response.arrayBuffer();
-    
-    fs.writeFileSync(filePath, Buffer.from(audioBuffer));
+
+    const audioData = await response.AudioStream.transformToByteArray();
+    fs.writeFileSync(filePath, Buffer.from(audioData));
     
     const relativePath = `/audio/${fileName}`;
     return { audioPath: relativePath };
