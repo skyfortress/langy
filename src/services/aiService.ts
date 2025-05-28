@@ -6,6 +6,13 @@ import { z } from "zod";
 import { tool } from "@langchain/core/tools";
 import { getAllCards } from "./cardService";
 
+export const createGeminiModel = (temperature: number = 0.7) => {
+  return new ChatGoogleGenerativeAI({
+    model: 'gemini-2.5-flash-preview-04-17',
+    temperature,
+  });
+};
+
 const createCardTool = tool(
   ({ word, translation, context }: CreateCardParameters) => {
     return {
@@ -26,7 +33,22 @@ const createCardTool = tool(
   }
 );
 
-// Format flashcards as context for the AI model
+export const extractCardsTool = tool(
+  ({ cards }: { cards: Array<{ front: string; back: string; }> }) => {
+    return { success: true, cards };
+  },
+  {
+    name: "extractCards",
+    description: "Extract flashcards from the provided text",
+    schema: z.object({
+      cards: z.array(z.object({
+        front: z.string().describe("Portuguese word or phrase"),
+        back: z.string().describe("English translation")
+      })).describe("Array of flashcards to create")
+    })
+  }
+);
+
 const formatFlashcardsContext = () => {
   const cards = getAllCards();
   
@@ -45,15 +67,30 @@ When responding to the user, you can refer to these existing vocabulary words. C
 `;
 };
 
-// Initialize the Gemini model
-const initializeGeminiModel = () => {
-  return new ChatGoogleGenerativeAI({
-    model: 'gemini-2.5-flash-preview-04-17',
-    temperature: 0.7,
-  });
+export const createFlashcardExtractionPrompt = () => {
+  const flashcardsContext = formatFlashcardsContext();
+  
+  return new SystemMessage(`You are a language learning assistant that creates Portuguese flashcards from user input.
+
+Your task is to analyze the provided text and extract Portuguese vocabulary words, phrases, or sentences that would be useful for language learning.
+
+Guidelines:
+1. Focus on Portuguese words and phrases that a learner would benefit from memorizing
+2. Include the Portuguese text as the "front" of the card
+3. Provide clear English translations as the "back" of the card
+4. For longer text, extract 5-10 key vocabulary items
+5. For vocabulary lists, create cards for each item
+6. For sentences, you can create cards for both the full sentence and key vocabulary words within it
+7. Prioritize commonly used words and practical phrases
+8. If the input contains conjugated verbs, create cards for the base form when appropriate
+9. Skip very basic words (like "a", "o", "e") unless they're part of a useful phrase
+10. IMPORTANT: Do not create cards for words that already exist in the user's collection
+
+${flashcardsContext}
+
+Use the extractCards tool to return the flashcards you've identified.`);
 };
 
-// Create a language learning system prompt based on the target language
 const createLanguageLearningPrompt = () => {
   const language = 'European Portuguese';
   const flashcardsContext = formatFlashcardsContext();
@@ -79,7 +116,6 @@ const createLanguageLearningPrompt = () => {
   );
 };
 
-// Convert ChatMessage array to Langchain message format
 const convertToChatMessages = (messages: ChatMessage[]) => {
   return messages.map(msg => {
     if (msg.role === 'user') {
@@ -90,7 +126,6 @@ const convertToChatMessages = (messages: ChatMessage[]) => {
   });
 };
 
-// Extract tool calls from the AI message
 const extractToolCalls = (response: AIMessage): ToolCall[] => {
   if (!response.tool_calls || response.tool_calls.length === 0) {
     return [];
@@ -104,30 +139,27 @@ const extractToolCalls = (response: AIMessage): ToolCall[] => {
   }));
 };
 
-// Generate a chat completion
 export const generateChatCompletion = async (
   request: ChatCompletionRequest
 ): Promise<ChatCompletionResponse> => {
   try {
     const { message, chatHistory = [] } = request;
     
-    // Initialize model
-    const model = initializeGeminiModel();
+    const model = createGeminiModel();
     const modelWithTools = model.bindTools([createCardTool]);
     
-    // Create messages array for the chat
     const systemPrompt = createLanguageLearningPrompt();
     const langchainMessages = [systemPrompt, ...convertToChatMessages(chatHistory), new HumanMessage(message)];
     
-    // Generate response
     const response = await modelWithTools.invoke(langchainMessages);
     const toolCalls = extractToolCalls(response);
     
-    // Format response
     const chatResponse: ChatMessage = {
       id: uuidv4(),
       role: 'assistant',
-      content: Array.isArray(response.content) ? (response.content.find(el => el.type === 'text') as any).text : response.content.toString(),
+      content: Array.isArray(response.content) ? 
+        (response.content.find(el => el.type === 'text') as TextContent)?.text || response.content.toString() : 
+        response.content.toString(),
       timestamp: new Date(),
       toolCalls: toolCalls.length > 0 ? toolCalls : undefined
     };
@@ -139,9 +171,37 @@ export const generateChatCompletion = async (
   }
 };
 
-// Save chat session (to be implemented with a database)
 export const saveChatSession = async (sessionId: string, messages: ChatMessage[]) => {
-  // This would typically save to a database
   console.log(`Saving chat session ${sessionId} with ${messages.length} messages`);
   return true;
 };
+
+export const generateFlashcardsFromText = async (text: string) => {
+  const model = createGeminiModel(0.3);
+  const modelWithTools = model.bindTools([extractCardsTool]);
+  
+  const systemPrompt = createFlashcardExtractionPrompt();
+  
+  const response = await modelWithTools.invoke([
+    systemPrompt,
+    new HumanMessage(`Please analyze this text and create Portuguese flashcards: ${text}`)
+  ]);
+
+  if (!response.tool_calls || response.tool_calls.length === 0) {
+    throw new Error('No flashcards could be generated from the provided text. Please try with Portuguese text or vocabulary.');
+  }
+
+  const toolCall = response.tool_calls[0];
+  const extractedCards = toolCall.args as { cards: Array<{ front: string; back: string; }> };
+
+  if (!extractedCards.cards || extractedCards.cards.length === 0) {
+    throw new Error('No suitable vocabulary found in the text for flashcard creation.');
+  }
+
+  return extractedCards.cards;
+};
+
+interface TextContent {
+  type: 'text';
+  text: string;
+}

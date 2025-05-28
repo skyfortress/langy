@@ -5,7 +5,6 @@ import { Geist } from "next/font/google";
 import { Button, Input, Alert } from "antd";
 import { AiOutlineDelete } from "react-icons/ai";
 import { FiPlus } from "react-icons/fi";
-import { IoLanguage } from "react-icons/io5";
 
 const geist = Geist({
   variable: "--font-geist",
@@ -22,10 +21,11 @@ interface CardStats {
 export default function Home() {
   const [cards, setCards] = useState<Card[]>([]);
   const [loading, setLoading] = useState(true);
-  const [cardInput, setCardInput] = useState({ front: "", back: "" });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [cardStats, setCardStats] = useState<CardStats>({ new: 0, learn: 0, due: 0, learned: 0 });
+  const [aiInput, setAiInput] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
 
   useEffect(() => {
     fetchCards();
@@ -62,38 +62,6 @@ export default function Home() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
-
-    if (!cardInput.front.trim() || !cardInput.back.trim()) {
-      setError("Both Portuguese and English texts are required");
-      return;
-    }
-
-    try {
-      const response = await fetch("/api/cards/create", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(cardInput),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to create card");
-      }
-
-      setCardInput({ front: "", back: "" });
-      setSuccess("Card added successfully!");
-      fetchCards();
-    } catch (error) {
-      console.error("Error:", error);
-      setError("Failed to add card");
-    }
-  };
-
   const handleDelete = async (id: string) => {
     try {
       const response = await fetch(`/api/cards/${id}`, {
@@ -109,6 +77,44 @@ export default function Home() {
     } catch (error) {
       console.error("Error:", error);
       setError("Failed to delete card");
+    }
+  };
+
+  const handleAiGenerate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+
+    if (!aiInput.trim()) {
+      setError("Please enter some text to generate flashcards from");
+      return;
+    }
+
+    try {
+      setAiLoading(true);
+      const response = await fetch("/api/cards/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ text: aiInput }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to generate flashcards");
+      }
+
+      const data = await response.json();
+      setAiInput("");
+      setSuccess(data.message);
+      fetchCards();
+      fetchCardStats();
+    } catch (error) {
+      console.error("Error:", error);
+      setError(error instanceof Error ? error.message : "Failed to generate flashcards");
+    } finally {
+      setAiLoading(false);
     }
   };
 
@@ -136,39 +142,22 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1">
             <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-              <h2 className="text-xl font-semibold mb-4">Add New Card</h2>
-              <form onSubmit={handleSubmit}>
+              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                Add a new card
+              </h2>
+              <form onSubmit={handleAiGenerate}>
                 <div className="mb-4">
                   <label
-                    htmlFor="front"
+                    htmlFor="aiInput"
                     className="block text-sm font-medium text-slate-700 mb-1"
                   >
-                    Portuguese (Front)
+                    Enter Portuguese text or vocabulary
                   </label>
                   <Input
-                    id="front"
-                    value={cardInput.front}
-                    onChange={(e) =>
-                      setCardInput({ ...cardInput, front: e.target.value })
-                    }
-                    placeholder="e.g., Bom dia"
-                  />
-                </div>
-
-                <div className="mb-4">
-                  <label
-                    htmlFor="back"
-                    className="block text-sm font-medium text-slate-700 mb-1"
-                  >
-                    English (Back)
-                  </label>
-                  <Input
-                    id="back"
-                    value={cardInput.back}
-                    onChange={(e) =>
-                      setCardInput({ ...cardInput, back: e.target.value })
-                    }
-                    placeholder="e.g., Good morning"
+                    id="aiInput"
+                    value={aiInput}
+                    onChange={(e) => setAiInput(e.target.value)}
+                    placeholder="Paste Portuguese text, vocabulary lists, or sentences here."
                   />
                 </div>
 
@@ -176,8 +165,10 @@ export default function Home() {
                   type="primary"
                   htmlType="submit"
                   block
+                  loading={aiLoading}
+                  style={{ backgroundColor: '#3b82f6' }}
                 >
-                  Add Card
+                  {aiLoading ? 'Generating Cards...' : 'Generate'}
                 </Button>
               </form>
             </div>
