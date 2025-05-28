@@ -16,6 +16,7 @@ interface CardStats {
   new: number;
   learn: number;
   due: number;
+  learned: number;
 }
 
 export default function Home() {
@@ -24,7 +25,7 @@ export default function Home() {
   const [cardInput, setCardInput] = useState({ front: "", back: "" });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [cardStats, setCardStats] = useState<CardStats>({ new: 0, learn: 0, due: 0 });
+  const [cardStats, setCardStats] = useState<CardStats>({ new: 0, learn: 0, due: 0, learned: 0 });
 
   useEffect(() => {
     fetchCards();
@@ -193,6 +194,11 @@ export default function Home() {
                   </div>
                   <div className="px-2 py-1 rounded bg-green-100 text-green-800">
                     Due: {cardStats.due}
+                  </div>
+                </div>
+                <div className="mb-4 text-center">
+                  <div className="px-3 py-2 rounded bg-purple-100 text-purple-800 inline-block">
+                    <span className="font-semibold">{cardStats.learned}</span> Words Learned
                   </div>
                 </div>
                 <Link href="/study" className="block w-full mb-4">

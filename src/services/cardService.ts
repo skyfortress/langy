@@ -213,10 +213,14 @@ export const getCardStats = () => {
   const learningCards = cards.filter(card => 
     card.reviewCount > 0 && card.repetitions <= 1
   );
+  const learnedCards = cards.filter(card => 
+    card.reviewCount > 0 && card.repetitions > 1
+  );
 
   return {
     new: newCards.length,
     learn: learningCards.length,
-    due: dueCards.length
+    due: dueCards.length,
+    learned: learnedCards.length
   };
 };
