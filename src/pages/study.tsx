@@ -2,9 +2,9 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Card, StudySession, ReviewQuality } from "@/types/card";
 import Link from "next/link";
 import { Geist } from "next/font/google";
-import { Button, Progress } from "antd";
+import { Button, Progress, message } from "antd";
 import { IoVolumeHigh } from "react-icons/io5";
-import { AiOutlineHome } from "react-icons/ai";
+import { AiOutlineHome, AiOutlineSound } from "react-icons/ai";
 
 const geist = Geist({
   variable: "--font-geist",
@@ -20,6 +20,7 @@ export default function Study() {
   const [stats, setStats] = useState({ total: 0, correct: 0 });
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [generatingAudio, setGeneratingAudio] = useState(false);
 
   useEffect(() => {
     fetchStudySession();
@@ -175,6 +176,62 @@ export default function Study() {
     });
   };
 
+  const generateAudio = async () => {
+    const currentCard = getCurrentCard();
+    if (!currentCard) {
+      return;
+    }
+    
+    try {
+      setGeneratingAudio(true);
+      
+      const response = await fetch(`/api/cards/generate-audio/${currentCard.id}`, {
+        method: 'POST',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate audio');
+      }
+      
+      const data = await response.json();
+      
+      if (data.success && data.audioPath) {
+        const updatedCard = { ...currentCard, audioPath: data.audioPath };
+        
+        if (session) {
+          const updatedCards = [...session.cards];
+          updatedCards[session.currentCardIndex] = updatedCard;
+          setSession({
+            ...session,
+            cards: updatedCards
+          });
+        }
+        
+        message.success('Audio generated successfully');
+        
+        if (audioRef.current) {
+          audioRef.current.src = data.audioPath;
+          audioRef.current.play()
+            .catch(error => console.error('Failed to play audio:', error));
+        } else {
+          audioRef.current = new Audio(data.audioPath);
+          audioRef.current.onended = () => setIsPlaying(false);
+          audioRef.current.onpause = () => setIsPlaying(false);
+          audioRef.current.onplay = () => setIsPlaying(true);
+          audioRef.current.play()
+            .catch(error => console.error('Failed to play audio:', error));
+        }
+      } else {
+        throw new Error(data.error || 'Failed to generate audio');
+      }
+    } catch (error) {
+      console.error('Error generating audio:', error);
+      message.error('Failed to generate audio');
+    } finally {
+      setGeneratingAudio(false);
+    }
+  };
+
   useEffect(() => {
     // Reset audio when card changes
     return () => {
@@ -264,13 +321,22 @@ export default function Study() {
               </p>
               <div className="flex items-center justify-center gap-2">
                 <p className="text-2xl font-medium">{cardFront}</p>
-                {(session?.mode === 'front-to-back' || showAnswer) && getCurrentCard()?.audioPath && (
+                {(session?.mode === 'front-to-back' || showAnswer) && getCurrentCard()?.audioPath ? (
                   <Button
                     type={isPlaying ? "primary" : "default"}
                     shape="circle"
                     icon={<IoVolumeHigh />}
                     onClick={playAudio}
                     aria-label="Play pronunciation"
+                  />
+                ) : (
+                  <Button
+                    type="default"
+                    shape="circle"
+                    icon={<AiOutlineSound />}
+                    onClick={generateAudio}
+                    loading={generatingAudio}
+                    aria-label="Generate pronunciation"
                   />
                 )}
               </div>
