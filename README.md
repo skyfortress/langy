@@ -1,40 +1,106 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/pages/api-reference/create-next-app).
+# Langy: Portuguese Language Learning App
+
+Langy is a modern web application designed to help users learn Portuguese through flashcards with spaced repetition, AI-powered language tutoring, and interactive study tools.
+
+## Features
+
+- **Flashcard System**: Create and review Portuguese vocabulary using a spaced repetition algorithm
+- **AI-Generated Flashcards**: Automatically generate flashcards from Portuguese text
+- **Study Mode**: Practice cards with both Portuguese-to-English and English-to-Portuguese modes
+- **AI Language Tutor**: Chat with an AI tutor to practice conversational Portuguese
+- **Text-to-Speech**: Listen to correct pronunciation of Portuguese words
+- **Progress Tracking**: Monitor your learning progress with detailed statistics
+
+## Technology Stack
+
+- **Frontend**: Next.js, React 19, TypeScript
+- **UI Components**: Ant Design, TailwindCSS
+- **AI Integration**: LangChain, Google Generative AI
+- **Text-to-Speech**: AWS Polly
+- **Data Storage**: JSON files
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Node.js (v20 or later)
+- Yarn package manager
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Installation
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+1. Clone the repository
+   ```bash
+   git clone https://github.com/yourusername/langy.git
+   cd langy
+   ```
 
-[API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+2. Install dependencies
+   ```bash
+   yarn install
+   ```
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) instead of React pages.
+3. Set up environment variables
+   Create a `.env.local` file in the root directory with the following variables:
+   ```
+   # AI Service API Keys
+   GOOGLE_API_KEY=your_google_api_key
+   
+   # Text-to-Speech API Keys
+   AWS_ACCESS_KEY_ID=your_aws_access_key
+   AWS_SECRET_ACCESS_KEY=your_aws_secret_key
+   AWS_REGION=your_aws_region
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/pages/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Start the development server
+   ```bash
+   yarn dev
+   ```
 
-## Learn More
+5. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-To learn more about Next.js, take a look at the following resources:
+## Usage
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn-pages-router) - an interactive Next.js tutorial.
+### Creating Flashcards
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Enter Portuguese text, vocabulary lists, or sentences in the input field
+2. Click "Generate" to create AI-generated flashcards
+3. View and manage your flashcards in the dashboard
 
-## Deploy on Vercel
+### Studying
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Click "Start Studying" to begin a review session
+2. Test your recall in both Portuguese-to-English and English-to-Portuguese directions
+3. Track your progress with the spaced repetition system
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/pages/building-your-application/deploying) for more details.
+### Practicing Conversation
+
+1. Click "Practice with AI Tutor" to start a chat session
+2. Engage in conversation with an AI tutor designed to help you practice Portuguese
+3. Receive feedback and corrections on your language use
+
+## Development
+
+### Project Structure
+
+- `/src/pages` - Next.js pages and API routes
+- `/src/components` - Reusable React components
+- `/src/services` - Service integrations (AI, TTS, etc.)
+- `/src/types` - TypeScript type definitions
+- `/src/utils` - Utility functions
+- `/data` - JSON data storage
+
+### Scripts
+
+- `yarn dev` - Start the development server with Turbopack
+- `yarn build` - Build the application for production
+- `yarn start` - Start the production server
+- `yarn lint` - Run ESLint to check code quality
+
+## License
+
+[MIT](LICENSE)
+
+## Acknowledgements
+
+- This project uses various open-source libraries and AI services to provide a comprehensive language learning experience
+- Special thanks to the creators of Next.js, React, and the other technologies that make this project possible
