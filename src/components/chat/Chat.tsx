@@ -122,16 +122,16 @@ const Chat: React.FC = () => {
         const cardCount = assistantMessage.toolCalls.filter(tool => tool.type === 'createCard').length;
         if (cardCount > 0) {
           const notification = document.createElement('div');
-          notification.className = 'fixed bottom-4 right-4 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded shadow-md';
+          notification.className = 'fixed bottom-2 sm:bottom-4 right-2 sm:right-4 bg-green-100 border-l-4 border-green-500 text-green-700 p-2 sm:p-4 rounded shadow-md max-w-[calc(100%-1rem)] sm:max-w-md z-50';
           notification.innerHTML = `
-            <div class="flex">
+            <div class="flex items-center">
               <div class="flex-shrink-0">
-                <svg class="h-5 w-5 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+                <svg class="h-4 w-4 sm:h-5 sm:w-5 text-green-500" viewBox="0 0 20 20" fill="currentColor">
                   <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                 </svg>
               </div>
-              <div class="ml-3">
-                <p class="text-sm">${cardCount} new flashcard${cardCount > 1 ? 's' : ''} created from your conversation!</p>
+              <div class="ml-2 sm:ml-3">
+                <p class="text-xs sm:text-sm">${cardCount} new flashcard${cardCount > 1 ? 's' : ''} created from your conversation!</p>
               </div>
             </div>
           `;
@@ -166,30 +166,31 @@ const Chat: React.FC = () => {
   
   return (
     <div className="flex flex-col h-full bg-white shadow-md rounded-lg overflow-hidden border border-slate-200">
-      <div className="bg-purple-600 text-white px-6 py-4 shadow-sm flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Chat in European Portuguese</h2>
+      <div className="bg-purple-600 text-white px-4 sm:px-6 py-3 sm:py-4 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+        <h2 className="text-lg sm:text-xl font-semibold">Chat in European Portuguese</h2>
         <Button 
           icon={<IoAdd />} 
           onClick={handleNewChat}
-          className="bg-white text-purple-600 hover:bg-purple-50 border-white"
+          className="bg-white text-purple-600 hover:bg-purple-50 border-white text-sm sm:text-base"
           disabled={isLoading}
+          size="middle"
         >
           New Chat
         </Button>
       </div>
       
-      <div className="flex-1 overflow-y-auto p-6 space-y-4">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4">
         {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center text-slate-500 my-8 space-y-4">
-            <div className="w-24 h-24 rounded-full bg-purple-100 flex items-center justify-center">
-              <BiMessageDetail className="h-12 w-12 text-purple-500" />
+          <div className="flex flex-col items-center justify-center h-full text-center text-slate-500 my-4 sm:my-8 space-y-3 sm:space-y-4 px-2 sm:px-4">
+            <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-full bg-purple-100 flex items-center justify-center">
+              <BiMessageDetail className="h-8 w-8 sm:h-12 sm:w-12 text-purple-500" />
             </div>
             <div>
-              <p className="text-lg font-medium text-slate-700">Start chatting to practice your European Portuguese!</p>
-              <p className="mt-2 text-sm text-slate-500">
+              <p className="text-base sm:text-lg font-medium text-slate-700">Start chatting to practice your European Portuguese!</p>
+              <p className="mt-2 text-xs sm:text-sm text-slate-500">
                 Try asking questions, practicing sentences, or learning about culture.
               </p>
-              <p className="mt-1 text-sm text-purple-600 font-medium">
+              <p className="mt-1 text-xs sm:text-sm text-purple-600 font-medium">
                 New words will automatically be saved as flashcards.
               </p>
             </div>
@@ -200,12 +201,12 @@ const Chat: React.FC = () => {
           ))
         )}
         {isLoading && (
-          <div className="flex justify-start mb-4">
-            <div className="bg-slate-100 rounded-lg px-4 py-2">
-              <div className="flex space-x-2">
-                <div className="w-2 h-2 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                <div className="w-2 h-2 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                <div className="w-2 h-2 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: '300ms' }}></div>
+          <div className="flex justify-start mb-3 sm:mb-4">
+            <div className="bg-slate-100 rounded-lg px-3 py-1 sm:px-4 sm:py-2">
+              <div className="flex space-x-1 sm:space-x-2">
+                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: '300ms' }}></div>
               </div>
             </div>
           </div>
@@ -213,28 +214,29 @@ const Chat: React.FC = () => {
         <div ref={messagesEndRef} />
       </div>
       
-      <div className="flex flex-wrap gap-2 px-4 py-3 bg-purple-50 border-t border-purple-100">
+      <div className="flex flex-wrap gap-1 sm:gap-2 px-2 sm:px-4 py-2 sm:py-3 bg-purple-50 border-t border-purple-100">
         {predefinedMessages.map((message, index) => (
           <Button
             key={index}
             onClick={() => handlePredefinedMessage(message)}
-            className="text-purple-600 border-purple-200 hover:bg-purple-100"
+            className="text-purple-600 border-purple-200 hover:bg-purple-100 text-xs sm:text-sm px-2 py-1 h-auto"
             disabled={isLoading}
+            size="small"
           >
             {message}
           </Button>
         ))}
       </div>
       
-      <form onSubmit={handleSubmit} className="border-t border-slate-200 bg-white p-4">
+      <form onSubmit={handleSubmit} className="border-t border-slate-200 bg-white p-2 sm:p-4">
         <div className="flex items-center">
           <Input
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Type a message in English or European Portuguese..."
+            placeholder="Type a message..."
             disabled={isLoading}
-            className="flex-1"
+            className="flex-1 text-sm"
           />
           <Button
             type="primary"
@@ -243,6 +245,7 @@ const Chat: React.FC = () => {
             className="ml-2"
             disabled={isLoading || !inputValue.trim()}
             shape="circle"
+            size="middle"
           />
         </div>
       </form>
