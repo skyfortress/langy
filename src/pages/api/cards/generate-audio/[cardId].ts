@@ -18,7 +18,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(404).json({ success: false, error: 'Card not found' });
       }
       
-      const textToGenerate = card.front;
+      const parts = card.front.split('/');
+      const textToGenerate = parts[parts.length -1];
       
       const audioResponse = await generatePortugueseAudio(textToGenerate);
       
