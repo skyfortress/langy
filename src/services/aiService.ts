@@ -1,10 +1,10 @@
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { HumanMessage, AIMessage, SystemMessage } from "@langchain/core/messages";
 import { ChatMessage, ChatCompletionRequest, ChatCompletionResponse, ToolCall, CreateCardParameters } from "../types/chat";
+import { Card } from "../types/card";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 import { tool } from "@langchain/core/tools";
-import { getAllCards } from "./cardService";
 
 export const createGeminiModel = (temperature: number = 0.7) => {
   return new ChatGoogleGenerativeAI({
@@ -49,9 +49,7 @@ export const extractCardsTool = tool(
   }
 );
 
-const formatFlashcardsContext = () => {
-  const cards = getAllCards();
-  
+const formatFlashcardsContext = (cards: Card[]) => {
   if (!cards || cards.length === 0) {
     return "";
   }
@@ -67,8 +65,8 @@ When responding to the user, you can refer to these existing vocabulary words. C
 `;
 };
 
-export const createFlashcardExtractionPrompt = () => {
-  const flashcardsContext = formatFlashcardsContext();
+export const createFlashcardExtractionPrompt = (cards: Card[]) => {
+  const flashcardsContext = formatFlashcardsContext(cards);
   
   return new SystemMessage(`You are a language learning assistant that creates Portuguese flashcards from user input.
 
@@ -91,9 +89,9 @@ ${flashcardsContext}
 Use the extractCards tool to return the flashcards you've identified.`);
 };
 
-const createLanguageLearningPrompt = () => {
+const createLanguageLearningPrompt = (cards: Card[]) => {
   const language = 'European Portuguese';
-  const flashcardsContext = formatFlashcardsContext();
+  const flashcardsContext = formatFlashcardsContext(cards);
   
   return new SystemMessage(
     `You are a helpful language tutor for ${language}. Your primary goal is to help the user 
@@ -140,7 +138,8 @@ const extractToolCalls = (response: AIMessage): ToolCall[] => {
 };
 
 export const generateChatCompletion = async (
-  request: ChatCompletionRequest
+  request: ChatCompletionRequest,
+  cards: Card[]
 ): Promise<ChatCompletionResponse> => {
   try {
     const { message, chatHistory = [] } = request;
@@ -148,7 +147,7 @@ export const generateChatCompletion = async (
     const model = createGeminiModel();
     const modelWithTools = model.bindTools([createCardTool]);
     
-    const systemPrompt = createLanguageLearningPrompt();
+    const systemPrompt = createLanguageLearningPrompt(cards);
     const langchainMessages = [systemPrompt, ...convertToChatMessages(chatHistory), new HumanMessage(message)];
     
     const response = await modelWithTools.invoke(langchainMessages);
@@ -171,16 +170,11 @@ export const generateChatCompletion = async (
   }
 };
 
-export const saveChatSession = async (sessionId: string, messages: ChatMessage[]) => {
-  console.log(`Saving chat session ${sessionId} with ${messages.length} messages`);
-  return true;
-};
-
-export const generateFlashcardsFromText = async (text: string) => {
+export const generateFlashcardsFromText = async (text: string, cards: Card[]) => {
   const model = createGeminiModel(0.3);
   const modelWithTools = model.bindTools([extractCardsTool]);
   
-  const systemPrompt = createFlashcardExtractionPrompt();
+  const systemPrompt = createFlashcardExtractionPrompt(cards);
   
   const response = await modelWithTools.invoke([
     systemPrompt,

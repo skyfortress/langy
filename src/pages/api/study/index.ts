@@ -1,12 +1,15 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { getCardsForReview } from '@/services/cardService';
+import { NextApiResponse } from 'next';
+import { CardService } from '@/services/cardService';
+import { withAuth, AuthenticatedRequest } from '@/utils/auth';
 
-export default function handler(req: NextApiRequest, res: NextApiResponse) {
+function handler(req: AuthenticatedRequest, res: NextApiResponse) {
+  const { username } = req.user;
+  const cardService = new CardService(username);
+
   if (req.method === 'GET') {
     try {
-      const cards = getCardsForReview();
+      const cards = cardService.getCardsForReview();
       
-      // Randomize the order of cards
       const shuffledCards = [...cards].sort(() => Math.random() - 0.5);
       
       res.status(200).json({
@@ -23,3 +26,5 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 }
+
+export default withAuth(handler);

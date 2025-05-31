@@ -1,26 +1,27 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
+import { NextApiResponse } from 'next';
 import { generatePortugueseAudio } from '@/services/ttsService';
-import { getAllCards, updateCard } from '@/services/cardService';
+import { CardService } from '@/services/cardService';
+import { withAuth, AuthenticatedRequest } from '@/utils/auth';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   if (req.method === 'POST') {
     try {
+      const { username } = req.user;
+      const cardService = new CardService(username);
       const { id, text } = req.body;
       
       if (!id || !text) {
         return res.status(400).json({ error: 'Card ID and text are required' });
       }
       
-      // Find the card
-      const cards = getAllCards();
+      const cards = cardService.getAllCards();
       const card = cards.find(c => c.id === id);
       
       if (!card) {
         return res.status(404).json({ error: 'Card not found' });
       }
       
-      // Generate audio
-      const audioResponse = await generatePortugueseAudio(text);
+      const audioResponse = await generatePortugueseAudio(text, username);
       
       if (audioResponse.error) {
         return res.status(500).json({ 
@@ -29,10 +30,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       }
       
-      // Update card with audio path
       if (audioResponse.audioPath) {
         card.audioPath = audioResponse.audioPath;
-        updateCard(card);
+        cardService.updateCard(card);
         
         return res.status(200).json({ 
           success: true, 
@@ -56,3 +56,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 }
+
+export default withAuth(handler);

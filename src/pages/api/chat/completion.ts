@@ -1,12 +1,13 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
+import { NextApiResponse } from 'next';
 import { generateChatCompletion } from '../../../services/aiService';
-import { addCard } from '../../../services/cardService';
-import { ChatCompletionRequest, ToolCall } from '../../../types/chat';
+import { CardService } from '../../../services/cardService';
+import { ChatHistoryService } from '../../../services/chatHistoryService';
+import { ChatCompletionRequest, ToolCall, ProcessedToolCall } from '../../../types/chat';
 import { v4 as uuidv4 } from 'uuid';
-import { getChatSession, createChatSession, updateChatSession } from '../../../services/chatHistoryService';
+import { withAuth, AuthenticatedRequest } from '@/utils/auth';
 
-export default async function handler(
-  req: NextApiRequest,
+async function handler(
+  req: AuthenticatedRequest,
   res: NextApiResponse
 ) {
   if (req.method !== 'POST') {
@@ -14,20 +15,21 @@ export default async function handler(
   }
 
   try {
+    const { username } = req.user;
+    const cardService = new CardService(username);
+    const chatHistoryService = new ChatHistoryService(username);
+    
     const { message, chatHistory, sessionId } = req.body as ChatCompletionRequest & { sessionId?: string };
 
     if (!message) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
-    // Get or create chat session
-    let session = sessionId ? getChatSession(sessionId) : null;
+    let session = sessionId ? chatHistoryService.getChatSession(sessionId) : null;
     if (!session) {
-      session = createChatSession();
+      session = chatHistoryService.createChatSession();
     }
 
-    // If we have a chat history from the client, use it for generating the response
-    // Otherwise, use the persisted history from the session
     const historyToUse = chatHistory || session.messages;
 
     const userMessage = {
@@ -37,22 +39,21 @@ export default async function handler(
       timestamp: new Date()
     };
 
+    const cards = cardService.getAllCards();
     const response = await generateChatCompletion({
       message,
       chatHistory: historyToUse ? [...historyToUse, userMessage] : [userMessage]
-    });
+    }, cards);
 
-    const processedToolCalls = await processToolCalls(response.message.toolCalls);
+    const processedToolCalls = await processToolCalls(response.message.toolCalls, cardService);
 
-    // Update chat history in the session
     const updatedMessages = [
       ...(historyToUse || []),
       userMessage,
       response.message
     ];
     
-    // Persist to filesystem
-    const updatedSession = updateChatSession(session.id, updatedMessages);
+    const updatedSession = chatHistoryService.updateChatSession(session.id, updatedMessages);
     
     if (!updatedSession) {
       console.error('Failed to update chat session');
@@ -70,19 +71,19 @@ export default async function handler(
   }
 }
 
-async function processToolCalls(toolCalls?: ToolCall[]) {
+async function processToolCalls(toolCalls: ToolCall[] | undefined, cardService: CardService): Promise<ProcessedToolCall[]> {
   if (!toolCalls || toolCalls.length === 0) {
     return [];
   }
 
-  const results = [];
+  const results: ProcessedToolCall[] = [];
 
   for (const call of toolCalls) {
     if (call.name === 'createCard') {
       const { word, translation } = call.args;
       
       try {
-        const newCard = addCard({
+        const newCard = await cardService.addCard({
           front: word,
           back: translation
         });
@@ -109,3 +110,5 @@ async function processToolCalls(toolCalls?: ToolCall[]) {
   
   return results;
 }
+
+export default withAuth(handler);

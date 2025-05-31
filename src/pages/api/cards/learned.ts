@@ -1,11 +1,14 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { getAllCards } from '@/services/cardService';
-import { Card } from '@/types/card';
+import { NextApiResponse } from 'next';
+import { CardService } from '@/services/cardService';
+import { withAuth, AuthenticatedRequest } from '@/utils/auth';
 
-export default function handler(req: NextApiRequest, res: NextApiResponse) {
+function handler(req: AuthenticatedRequest, res: NextApiResponse) {
+  const { username } = req.user;
+  const cardService = new CardService(username);
+
   if (req.method === 'GET') {
     try {
-      const cards = getAllCards();
+      const cards = cardService.getAllCards();
       const learnedCards = cards.filter(card => 
         card.reviewCount > 0 && card.repetitions > 1
       );
@@ -20,3 +23,5 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 }
+
+export default withAuth(handler);

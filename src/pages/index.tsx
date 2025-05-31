@@ -6,6 +6,8 @@ import { Button, Input, Alert } from "antd";
 import { AiOutlineDelete } from "react-icons/ai";
 import { FiPlus } from "react-icons/fi";
 import { LearnedWordsModal } from "@/components/LearnedWordsModal";
+import { useAuth } from "@/utils/authContext";
+import Header from "@/components/layout/Header";
 
 const geist = Geist({
   variable: "--font-geist",
@@ -20,6 +22,7 @@ interface CardStats {
 }
 
 export default function Home() {
+  const { isLoggedIn, username, logout, loading: authLoading } = useAuth();
   const [cards, setCards] = useState<Card[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -30,9 +33,11 @@ export default function Home() {
   const [learnedCardsVisible, setLearnedCardsVisible] = useState(false);
 
   useEffect(() => {
-    fetchCards();
-    fetchCardStats();
-  }, []);
+    if (isLoggedIn) {
+      fetchCards();
+      fetchCardStats();
+    }
+  }, [isLoggedIn]);
 
   const fetchCardStats = async () => {
     try {
@@ -124,15 +129,14 @@ export default function Home() {
     }
   };
 
+  if (authLoading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
+
   return (
     <div className={`${geist.className} min-h-screen bg-slate-50 p-4 md:p-8`}>
       <div className="max-w-6xl mx-auto">
-        <header className="mb-8 text-center">
-          <h1 className="text-4xl font-bold text-slate-800 mb-2">
-            🇵🇹 Langy: Portuguese Flashcards
-          </h1>
-          <p className="text-slate-600">Learn Portuguese with spaced repetition</p>
-        </header>
+        <Header />
 
         {(error || success) && (
           <div className="max-w-md mx-auto mb-6">

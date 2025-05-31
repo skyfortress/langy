@@ -1,7 +1,11 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { addCard } from '@/services/cardService';
+import { NextApiResponse } from 'next';
+import { CardService } from '@/services/cardService';
+import { withAuth, AuthenticatedRequest } from '@/utils/auth';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
+  const { username } = req.user;
+  const cardService = new CardService(username);
+
   if (req.method === 'POST') {
     try {
       const { front, back } = req.body;
@@ -10,7 +14,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(400).json({ error: 'Front and back text are required' });
       }
       
-      const newCard = await addCard({ front, back });
+      const newCard = await cardService.addCard({ front, back });
       res.status(201).json(newCard);
     } catch (error) {
       console.error('Error creating card:', error);
@@ -21,3 +25,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 }
+
+export default withAuth(handler);

@@ -1,25 +1,29 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
+import { NextApiResponse } from 'next';
 import { generateFlashcardsFromText } from '@/services/aiService';
-import { addCard } from '@/services/cardService';
+import { CardService } from '@/services/cardService';
+import { withAuth, AuthenticatedRequest } from '@/utils/auth';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
   try {
+    const { username } = req.user;
+    const cardService = new CardService(username);
     const { text } = req.body;
 
     if (!text || typeof text !== 'string') {
       return res.status(400).json({ message: 'Text input is required' });
     }
 
-    const uniqueCards = await generateFlashcardsFromText(text);
+    const cards = cardService.getAllCards();
+    const uniqueCards = await generateFlashcardsFromText(text, cards);
 
     const createdCards = [];
     for (const cardData of uniqueCards) {
       try {
-        const newCard = await addCard({
+        const newCard = await cardService.addCard({
           front: cardData.front.trim(),
           back: cardData.back.trim()
         });
@@ -41,3 +45,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(500).json({ message: errorMessage });
   }
 }
+
+export default withAuth(handler);
