@@ -2,9 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import ChatMessage from './ChatMessage';
 import { ChatMessage as ChatMessageType, ApiResponse, ChatSession } from '../../types/chat';
-import { Button, Input } from 'antd';
+import { Button, Input, notification } from 'antd';
 import { IoSend, IoAdd } from 'react-icons/io5';
 import { BiMessageDetail } from 'react-icons/bi';
+import { CheckCircleFilled } from '@ant-design/icons';
 
 const Chat: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
@@ -121,25 +122,13 @@ const Chat: React.FC = () => {
       if (assistantMessage.toolCalls && assistantMessage.toolCalls.length > 0) {
         const cardCount = assistantMessage.toolCalls.filter(tool => tool.type === 'createCard').length;
         if (cardCount > 0) {
-          const notification = document.createElement('div');
-          notification.className = 'fixed bottom-2 sm:bottom-4 right-2 sm:right-4 bg-green-100 border-l-4 border-green-500 text-green-700 p-2 sm:p-4 rounded shadow-md max-w-[calc(100%-1rem)] sm:max-w-md z-50';
-          notification.innerHTML = `
-            <div class="flex items-center">
-              <div class="flex-shrink-0">
-                <svg class="h-4 w-4 sm:h-5 sm:w-5 text-green-500" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                </svg>
-              </div>
-              <div class="ml-2 sm:ml-3">
-                <p class="text-xs sm:text-sm">${cardCount} new flashcard${cardCount > 1 ? 's' : ''} created from your conversation!</p>
-              </div>
-            </div>
-          `;
-          document.body.appendChild(notification);
-          
-          setTimeout(() => {
-            notification.remove();
-          }, 5000);
+          notification.success({
+            message: 'Flashcards Created',
+            description: `${cardCount} new flashcard${cardCount > 1 ? 's' : ''} created from your conversation!`,
+            placement: 'bottomRight',
+            duration: 5,
+            icon: <CheckCircleFilled style={{ color: '#52c41a' }} />
+          });
         }
       }
       

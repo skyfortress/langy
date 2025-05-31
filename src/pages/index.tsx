@@ -5,6 +5,7 @@ import { Geist } from "next/font/google";
 import { Button, Input, Alert } from "antd";
 import { AiOutlineDelete } from "react-icons/ai";
 import { FiPlus } from "react-icons/fi";
+import { LearnedWordsModal } from "@/components/LearnedWordsModal";
 
 const geist = Geist({
   variable: "--font-geist",
@@ -26,6 +27,7 @@ export default function Home() {
   const [cardStats, setCardStats] = useState<CardStats>({ new: 0, learn: 0, due: 0, learned: 0 });
   const [aiInput, setAiInput] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
+  const [learnedCardsVisible, setLearnedCardsVisible] = useState(false);
 
   useEffect(() => {
     fetchCards();
@@ -43,6 +45,10 @@ export default function Home() {
     } catch (error) {
       console.error("Error:", error);
     }
+  };
+
+  const showLearnedCards = () => {
+    setLearnedCardsVisible(true);
   };
 
   const fetchCards = async () => {
@@ -188,7 +194,10 @@ export default function Home() {
                   </div>
                 </div>
                 <div className="mb-4 text-center">
-                  <div className="px-3 py-2 rounded bg-purple-100 text-purple-800 inline-block">
+                  <div 
+                    className="px-3 py-2 rounded bg-purple-100 text-purple-800 inline-block cursor-pointer hover:bg-purple-200 transition-colors"
+                    onClick={showLearnedCards}
+                  >
                     <span className="font-semibold">{cardStats.learned}</span> Words Learned
                   </div>
                 </div>
@@ -286,6 +295,12 @@ export default function Home() {
             </div>
           </div>
         </div>
+
+        {/* Learned Words Modal */}
+        <LearnedWordsModal
+          visible={learnedCardsVisible}
+          onClose={() => setLearnedCardsVisible(false)}
+        />
       </div>
     </div>
   );
