@@ -16,7 +16,7 @@ async function handler(
         return res.status(400).json({ error: 'Valid card ID is required' });
       }
       
-      cardService.deleteCard(cardId);
+      await cardService.deleteCard(cardId);
       res.status(200).json({ message: 'Card deleted successfully' });
     } catch (error) {
       console.error('Error deleting card:', error);

@@ -2,13 +2,13 @@ import { NextApiResponse } from 'next';
 import { CardService } from '@/services/cardService';
 import { withAuth, AuthenticatedRequest } from '@/utils/auth';
 
-function handler(req: AuthenticatedRequest, res: NextApiResponse) {
+async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   const { username } = req.user;
   const cardService = new CardService(username);
 
   if (req.method === 'GET') {
     try {
-      const stats = cardService.getCardStats();
+      const stats = await cardService.getCardStats();
       res.status(200).json(stats);
     } catch (error) {
       console.error('Error fetching card stats:', error);

@@ -1,44 +1,38 @@
-import fs from 'fs';
-import path from 'path';
+import { ObjectId } from 'mongodb';
 import { Card, ReviewQuality } from '@/types/card';
 import { generatePortugueseAudio } from './ttsService';
+import { connectToDatabase } from './database';
 
-// SM-2 algorithm constants
 const DEFAULT_EASE_FACTOR = 2.5;
 const MIN_EASE_FACTOR = 1.3;
+const CARDS_COLLECTION = 'cards';
 
 export class CardService {
-  private dataDir: string;
-  private cardsFile: string;
+  private username: string;
 
   constructor(username: string) {
-    this.dataDir = path.join(process.cwd(), 'data', username);
-    this.cardsFile = path.join(this.dataDir, 'cards.json');
-    this.ensureDataDir();
+    this.username = username;
   }
 
-  private ensureDataDir(): void {
-    if (!fs.existsSync(this.dataDir)) {
-      fs.mkdirSync(this.dataDir, { recursive: true });
-    }
+  async getAllCards(): Promise<Card[]> {
+    const db = await connectToDatabase();
+    const collection = db.collection<Card>(CARDS_COLLECTION);
     
-    if (!fs.existsSync(this.cardsFile)) {
-      fs.writeFileSync(this.cardsFile, JSON.stringify({ cards: [] }, null, 2));
-    }
+    const cards = await collection.find({ username: this.username }).toArray();
+    return cards.map(card => ({
+      ...card,
+      id: card.id || card._id?.toString() || ''
+    }));
   }
 
-  getAllCards(): Card[] {
-    this.ensureDataDir();
-    const data = fs.readFileSync(this.cardsFile, 'utf-8');
-    return JSON.parse(data).cards;
-  }
-
-  async addCard(card: Omit<Card, 'id' | 'reviewCount' | 'correctCount' | 'easeFactor' | 'interval' | 'repetitions' | 'audioPath'>): Promise<Card> {
-    const cards = this.getAllCards();
+  async addCard(card: Omit<Card, 'id' | 'reviewCount' | 'correctCount' | 'easeFactor' | 'interval' | 'repetitions' | 'audioPath' | 'username'>): Promise<Card> {
+    const db = await connectToDatabase();
+    const collection = db.collection<Card>(CARDS_COLLECTION);
     
     const newCard: Card = {
       ...card,
-      id: Date.now().toString(),
+      id: new ObjectId().toString(),
+      username: this.username,
       reviewCount: 0,
       correctCount: 0,
       easeFactor: DEFAULT_EASE_FACTOR,
@@ -46,45 +40,39 @@ export class CardService {
       repetitions: 0
     };
     
-    cards.push(newCard);
-    fs.writeFileSync(this.cardsFile, JSON.stringify({ cards }, null, 2));
-    
-
-    // generatePortugueseAudio(card.front, username)
-    //   .then(audioResponse => {
-    //     if (audioResponse.audioPath) {
-    //       newCard.audioPath = audioResponse.audioPath;
-    //       this.updateCard(newCard);
-    //     }
-    //   })
-    //   .catch(error => {
-    //     console.error('Failed to generate audio:', error);
-    //   });
-    
+    await collection.insertOne(newCard);
     return newCard;
   }
 
-  updateCard(card: Card): Card {
-    const cards = this.getAllCards();
-    const index = cards.findIndex(c => c.id === card.id);
+  async updateCard(card: Card): Promise<Card> {
+    const db = await connectToDatabase();
+    const collection = db.collection<Card>(CARDS_COLLECTION);
     
-    if (index === -1) {
+    const result = await collection.updateOne(
+      { id: card.id, username: this.username },
+      { $set: { ...card, username: this.username } }
+    );
+    
+    if (result.matchedCount === 0) {
       throw new Error(`Card with ID ${card.id} not found`);
     }
-    
-    cards[index] = card;
-    fs.writeFileSync(this.cardsFile, JSON.stringify({ cards }, null, 2));
     
     return card;
   }
 
-  deleteCard(id: string): void {
-    const cards = this.getAllCards().filter(card => card.id !== id);
-    fs.writeFileSync(this.cardsFile, JSON.stringify({ cards }, null, 2));
+  async deleteCard(id: string): Promise<void> {
+    const db = await connectToDatabase();
+    const collection = db.collection<Card>(CARDS_COLLECTION);
+    
+    const result = await collection.deleteOne({ id, username: this.username });
+    
+    if (result.deletedCount === 0) {
+      throw new Error(`Card with ID ${id} not found`);
+    }
   }
 
-  getCardsForReview(): Card[] {
-    const cards = this.getAllCards();
+  async getCardsForReview(): Promise<Card[]> {
+    const cards = await this.getAllCards();
     const now = new Date();
     
     const dueCards = cards.filter(card => 
@@ -129,11 +117,11 @@ export class CardService {
     return updatedCard;
   }
 
-  recordReview(cardId: string, correct: boolean, quality?: ReviewQuality): Card {
-    const cards = this.getAllCards();
-    const index = cards.findIndex(c => c.id === cardId);
+  async recordReview(cardId: string, correct: boolean, quality?: ReviewQuality): Promise<Card> {
+    const cards = await this.getAllCards();
+    const card = cards.find(c => c.id === cardId);
     
-    if (index === -1) {
+    if (!card) {
       throw new Error(`Card with ID ${cardId} not found`);
     }
     
@@ -143,15 +131,14 @@ export class CardService {
         ? ReviewQuality.CorrectWithSomeHesitation 
         : ReviewQuality.CompleteBlackout;
     
-    cards[index] = this.calculateSM2Parameters(cards[index], responseQuality);
+    const updatedCard = this.calculateSM2Parameters(card, responseQuality);
+    await this.updateCard(updatedCard);
     
-    fs.writeFileSync(this.cardsFile, JSON.stringify({ cards }, null, 2));
-    
-    return cards[index];
+    return updatedCard;
   }
 
-  getStudyStatistics() {
-    const cards = this.getAllCards();
+  async getStudyStatistics() {
+    const cards = await this.getAllCards();
     const totalCards = cards.length;
     const cardsReviewed = cards.filter(card => card.reviewCount > 0).length;
     const totalReviews = cards.reduce((sum, card) => sum + card.reviewCount, 0);
@@ -178,8 +165,8 @@ export class CardService {
     };
   }
 
-  getCardStats() {
-    const cards = this.getAllCards();
+  async getCardStats() {
+    const cards = await this.getAllCards();
     const now = new Date();
     
     const newCards = cards.filter(card => card.reviewCount === 0);

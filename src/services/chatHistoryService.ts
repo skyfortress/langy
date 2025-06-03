@@ -1,125 +1,101 @@
-import fs from 'fs';
-import path from 'path';
+import { ObjectId } from 'mongodb';
 import { v4 as uuidv4 } from 'uuid';
 import { ChatMessage, ChatSession } from '../types/chat';
+import { connectToDatabase } from './database';
+
+const CHAT_SESSIONS_COLLECTION = 'chatSessions';
 
 export class ChatHistoryService {
-  private sessionsDir: string;
+  private username: string;
   
   constructor(username: string) {
-    this.sessionsDir = path.join(process.cwd(), 'data', username, 'chat-sessions');
-    this.ensureSessionsDirectory();
+    this.username = username;
   }
 
-  private ensureSessionsDirectory(): void {
-    if (!fs.existsSync(this.sessionsDir)) {
-      fs.mkdirSync(this.sessionsDir, { recursive: true });
-    }
-  }
-
-  private getSessionFilePath(sessionId: string): string {
-    return path.join(this.sessionsDir, `${sessionId}.json`);
-  }
-
-  createChatSession(): ChatSession {
-    const sessionId = uuidv4();
+  async createChatSession(): Promise<ChatSession> {
+    const db = await connectToDatabase();
+    const collection = db.collection<ChatSession>(CHAT_SESSIONS_COLLECTION);
     
     const session: ChatSession = {
-      id: sessionId,
+      id: new ObjectId().toString(),
+      username: this.username,
       messages: [],
       language: 'European Portuguese',
       createdAt: new Date(),
       updatedAt: new Date()
     };
     
-    fs.writeFileSync(
-      this.getSessionFilePath(sessionId),
-      JSON.stringify(session, null, 2)
-    );
-    
+    await collection.insertOne(session);
     return session;
   }
 
-  getChatSession(sessionId: string): ChatSession | null {
-    const filePath = this.getSessionFilePath(sessionId);
+  async getChatSession(sessionId: string): Promise<ChatSession | null> {
+    const db = await connectToDatabase();
+    const collection = db.collection<ChatSession>(CHAT_SESSIONS_COLLECTION);
     
-    if (!fs.existsSync(filePath)) {
-      return null;
-    }
-    
-    try {
-      const fileContent = fs.readFileSync(filePath, 'utf-8');
-      const session = JSON.parse(fileContent) as ChatSession;
-      
-      session.createdAt = new Date(session.createdAt);
-      session.updatedAt = new Date(session.updatedAt);
-      session.messages.forEach(msg => {
-        msg.timestamp = new Date(msg.timestamp);
-      });
-      
-      return session;
-    } catch (error) {
-      console.error(`Error reading chat session ${sessionId}:`, error);
-      return null;
-    }
-  }
-
-  getAllChatSessions(): ChatSession[] {
-    try {
-      const files = fs.readdirSync(this.sessionsDir);
-      const sessionFiles = files.filter(file => file.endsWith('.json'));
-      
-      return sessionFiles
-        .map(file => {
-          const sessionId = path.basename(file, '.json');
-          return this.getChatSession(sessionId);
-        })
-        .filter((session): session is ChatSession => session !== null)
-        .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
-    } catch (error) {
-      console.error('Error reading chat sessions:', error);
-      return [];
-    }
-  }
-
-  updateChatSession(
-    sessionId: string,
-    messages: ChatMessage[]
-  ): ChatSession | null {
-    const session = this.getChatSession(sessionId);
+    const session = await collection.findOne({ 
+      id: sessionId, 
+      username: this.username 
+    });
     
     if (!session) {
       return null;
     }
     
-    session.messages = messages;
-    session.updatedAt = new Date();
-    
-    try {
-      fs.writeFileSync(
-        this.getSessionFilePath(sessionId),
-        JSON.stringify(session, null, 2)
-      );
-      return session;
-    } catch (error) {
-      console.error(`Error updating chat session ${sessionId}:`, error);
-      return null;
-    }
+    return {
+      ...session,
+      id: session.id || session._id?.toString() || ''
+    };
   }
 
-  deleteChatSession(sessionId: string): boolean {
-    const filePath = this.getSessionFilePath(sessionId);
+  async getAllChatSessions(): Promise<ChatSession[]> {
+    const db = await connectToDatabase();
+    const collection = db.collection<ChatSession>(CHAT_SESSIONS_COLLECTION);
     
-    if (!fs.existsSync(filePath)) {
-      return false;
+    const sessions = await collection
+      .find({ username: this.username })
+      .sort({ updatedAt: -1 })
+      .toArray();
+    
+    return sessions.map(session => ({
+      ...session,
+      id: session.id || session._id?.toString() || ''
+    }));
+  }
+
+  async updateChatSession(sessionId: string, messages: ChatMessage[]): Promise<ChatSession | null> {
+    const db = await connectToDatabase();
+    const collection = db.collection<ChatSession>(CHAT_SESSIONS_COLLECTION);
+    
+    const updatedAt = new Date();
+    
+    const result = await collection.updateOne(
+      { id: sessionId, username: this.username },
+      { 
+        $set: { 
+          messages, 
+          updatedAt,
+          username: this.username
+        }
+      }
+    );
+    
+    if (result.matchedCount === 0) {
+      return null;
     }
     
-    try {
-      fs.unlinkSync(filePath);
-      return true;
-    } catch (error) {
-      console.error(`Error deleting chat session ${sessionId}:`, error);
-      return false;
-    }
+    return this.getChatSession(sessionId);
+  }
+
+  async deleteChatSession(sessionId: string): Promise<boolean> {
+    const db = await connectToDatabase();
+    const collection = db.collection<ChatSession>(CHAT_SESSIONS_COLLECTION);
+    
+    const result = await collection.deleteOne({ 
+      id: sessionId, 
+      username: this.username 
+    });
+    
+    return result.deletedCount > 0;
   }
 }

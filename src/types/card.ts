@@ -1,5 +1,9 @@
+import { ObjectId } from 'mongodb';
+
 export interface Card {
   id: string;
+  _id?: ObjectId;
+  username: string; // New property for username
   front: string; // Portuguese
   back: string;  // English
   audioPath?: string; // Path to audio file

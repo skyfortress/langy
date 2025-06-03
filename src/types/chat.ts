@@ -1,3 +1,5 @@
+import { ObjectId } from 'mongodb';
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
@@ -36,6 +38,8 @@ export interface ApiResponse {
 
 export interface ChatSession {
   id: string;
+  _id?: ObjectId;
+  username: string;
   messages: ChatMessage[];
   language: string; // e.g., 'Portuguese'
   createdAt: Date;

@@ -17,7 +17,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
       return res.status(400).json({ message: 'Text input is required' });
     }
 
-    const cards = cardService.getAllCards();
+    const cards = await cardService.getAllCards();
     const uniqueCards = await generateFlashcardsFromText(text, cards);
 
     const createdCards = [];
@@ -34,15 +34,12 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
     }
 
     res.status(200).json({
-      message: `Successfully created ${createdCards.length} flashcard(s)`,
-      cards: createdCards,
-      count: createdCards.length
+      message: `Generated ${createdCards.length} new cards`,
+      cards: createdCards
     });
-
   } catch (error) {
-    console.error('Error generating flashcards:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Failed to generate flashcards';
-    res.status(500).json({ message: errorMessage });
+    console.error('Error generating cards:', error);
+    res.status(500).json({ message: 'Failed to generate cards' });
   }
 }
 

@@ -2,13 +2,13 @@ import { NextApiResponse } from 'next';
 import { CardService } from '@/services/cardService';
 import { withAuth, AuthenticatedRequest } from '@/utils/auth';
 
-function handler(req: AuthenticatedRequest, res: NextApiResponse) {
+async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   const { username } = req.user;
   const cardService = new CardService(username);
 
   if (req.method === 'GET') {
     try {
-      const cards = cardService.getCardsForReview();
+      const cards = await cardService.getCardsForReview();
       
       const shuffledCards = [...cards].sort(() => Math.random() - 0.5);
       

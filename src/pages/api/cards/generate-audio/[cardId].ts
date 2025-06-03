@@ -14,7 +14,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         return res.status(400).json({ success: false, error: 'Valid card ID is required' });
       }
       
-      const cards = cardService.getAllCards();
+      const cards = await cardService.getAllCards();
       const card = cards.find(c => c.id === cardId);
       
       if (!card) {
@@ -35,7 +35,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
       
       if (audioResponse.audioPath) {
         card.audioPath = audioResponse.audioPath;
-        cardService.updateCard(card);
+        await cardService.updateCard(card);
         
         return res.status(200).json({ 
           success: true, 

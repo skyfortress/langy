@@ -2,13 +2,13 @@ import { NextApiResponse } from 'next';
 import { CardService } from '@/services/cardService';
 import { withAuth, AuthenticatedRequest } from '@/utils/auth';
 
-function handler(req: AuthenticatedRequest, res: NextApiResponse) {
+async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   const { username } = req.user;
   const cardService = new CardService(username);
 
   if (req.method === 'GET') {
     try {
-      const cards = cardService.getAllCards();
+      const cards = await cardService.getAllCards();
       const learnedCards = cards.filter(card => 
         card.reviewCount > 0 && card.repetitions > 1
       );

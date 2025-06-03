@@ -1,9 +1,9 @@
 import { NextApiResponse } from 'next';
 import { CardService } from '@/services/cardService';
-import { CardReviewResult, ReviewQuality } from '@/types/card';
 import { withAuth, AuthenticatedRequest } from '@/utils/auth';
+import { CardReviewResult } from '@/types/card';
 
-function handler(req: AuthenticatedRequest, res: NextApiResponse) {
+async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   const { username } = req.user;
   const cardService = new CardService(username);
 
@@ -23,7 +23,7 @@ function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         return res.status(400).json({ error: 'Quality must be between 0 and 5' });
       }
       
-      const updatedCard = cardService.recordReview(id, correct, quality);
+      const updatedCard = await cardService.recordReview(id, correct, quality);
       res.status(200).json(updatedCard);
     } catch (error) {
       console.error('Error recording review:', error);

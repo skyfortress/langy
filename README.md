@@ -104,3 +104,75 @@ Langy is a modern web application designed to help users learn Portuguese throug
 
 - This project uses various open-source libraries and AI services to provide a comprehensive language learning experience
 - Special thanks to the creators of Next.js, React, and the other technologies that make this project possible
+
+# Langy - Language Learning Flashcard App
+
+## Database Migration to MongoDB
+
+This project has been migrated from JSON file storage to MongoDB for better scalability and performance.
+
+### Prerequisites
+
+- Docker and Docker Compose (for local MongoDB)
+- MongoDB instance (local or cloud)
+
+### Setup MongoDB
+
+1. **Local Development with Docker:**
+   ```bash
+   docker-compose up -d mongodb
+   ```
+
+2. **Environment Configuration:**
+   Create `.env.local` file with:
+   ```
+   MONGODB_URI=mongodb://root:root@localhost:27021/langy?authSource=admin
+   ```
+
+### Migration from JSON to MongoDB
+
+If you have existing JSON data in the `data/` directory, run the migration script:
+
+```bash
+yarn migrate
+```
+
+This will:
+- Connect to your MongoDB instance
+- Create a single `cards` collection
+- Transfer all existing card data with username property
+- Preserve all SM-2 algorithm data and review history
+
+### Database Structure
+
+Single `cards` collection containing documents with:
+- Card content (front/back text)
+- Username property for data isolation
+- SM-2 algorithm data (ease factor, interval, repetitions)
+- Review history and statistics
+- Audio file paths
+
+### API Changes
+
+All CardService methods are now asynchronous. The following APIs have been updated:
+- `GET /api/cards` - Fetch all cards
+- `POST /api/cards/create` - Create new card
+- `DELETE /api/cards/[cardId]` - Delete card
+- `POST /api/cards/generate` - Generate cards from text
+- `POST /api/study/review` - Record study review
+- `GET /api/study` - Get study session
+- `GET /api/cards/stats` - Get card statistics
+- `GET /api/cards/learned` - Get learned cards
+
+### Development
+
+```bash
+# Start MongoDB
+docker-compose up -d mongodb
+
+# Run migration (if needed)
+yarn migrate
+
+# Start development server
+yarn dev
+```

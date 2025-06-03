@@ -1,10 +1,9 @@
 import { NextApiResponse } from 'next';
+import { withAuth, AuthenticatedRequest } from '@/utils/auth';
+import { ChatCompletionRequest, ChatMessage, ProcessedToolCall } from '@/types/chat';
+import { ChatHistoryService } from '../../../services/chatHistoryService';
 import { generateChatCompletion } from '../../../services/aiService';
 import { CardService } from '../../../services/cardService';
-import { ChatHistoryService } from '../../../services/chatHistoryService';
-import { ChatCompletionRequest, ToolCall, ProcessedToolCall } from '../../../types/chat';
-import { v4 as uuidv4 } from 'uuid';
-import { withAuth, AuthenticatedRequest } from '@/utils/auth';
 
 async function handler(
   req: AuthenticatedRequest,
@@ -19,96 +18,77 @@ async function handler(
     const cardService = new CardService(username);
     const chatHistoryService = new ChatHistoryService(username);
     
-    const { message, chatHistory, sessionId } = req.body as ChatCompletionRequest & { sessionId?: string };
+    const { message, chatHistory, sessionId }: ChatCompletionRequest & { sessionId?: string } = req.body;
 
     if (!message) {
-      return res.status(400).json({ message: 'Missing required fields' });
+      return res.status(400).json({ message: 'Message is required' });
     }
 
-    let session = sessionId ? chatHistoryService.getChatSession(sessionId) : null;
+    let session = sessionId ? await chatHistoryService.getChatSession(sessionId) : null;
     if (!session) {
-      session = chatHistoryService.createChatSession();
+      session = await chatHistoryService.createChatSession();
     }
 
-    const historyToUse = chatHistory || session.messages;
+    const currentHistory = chatHistory || session.messages;
+    const cards = await cardService.getAllCards();
 
-    const userMessage = {
-      id: uuidv4(),
-      role: 'user' as const,
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
+      role: 'user',
       content: message,
       timestamp: new Date()
     };
 
-    const cards = cardService.getAllCards();
-    const response = await generateChatCompletion({
-      message,
-      chatHistory: historyToUse ? [...historyToUse, userMessage] : [userMessage]
-    }, cards);
+    const { message: assistantMessage } = await generateChatCompletion(
+      { message, chatHistory: currentHistory },
+      cards
+    );
 
-    const processedToolCalls = await processToolCalls(response.message.toolCalls, cardService);
-
-    const updatedMessages = [
-      ...(historyToUse || []),
-      userMessage,
-      response.message
-    ];
+    const processedToolCalls: ProcessedToolCall[] = [];
     
-    const updatedSession = chatHistoryService.updateChatSession(session.id, updatedMessages);
-    
-    if (!updatedSession) {
-      console.error('Failed to update chat session');
+    if (assistantMessage.toolCalls) {
+      for (const toolCall of assistantMessage.toolCalls) {
+        try {
+          if (toolCall.name === 'createCard') {
+            const { word, translation, context } = toolCall.args;
+            await cardService.addCard({
+              front: word,
+              back: translation
+            });
+            
+            processedToolCalls.push({
+              id: toolCall.id,
+              type: toolCall.type,
+              name: toolCall.name,
+              status: 'success',
+              result: { word, translation, context }
+            });
+          }
+        } catch (error) {
+          processedToolCalls.push({
+            id: toolCall.id,
+            type: toolCall.type,
+            name: toolCall.name,
+            status: 'error',
+            error: error instanceof Error ? error.message : 'Unknown error'
+          });
+        }
+      }
     }
 
-    return res.status(200).json({
+    const updatedMessages = [...currentHistory, userMessage, assistantMessage];
+    await chatHistoryService.updateChatSession(session.id, updatedMessages);
+
+    res.status(200).json({
       userMessage,
-      assistantMessage: response.message,
+      assistantMessage,
       processedToolCalls,
       sessionId: session.id
     });
   } catch (error) {
-    console.error('Error in chat completion endpoint:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    console.error('Error generating chat response:', error);
+    res.status(500).json({ message: 'Failed to generate response' });
   }
-}
-
-async function processToolCalls(toolCalls: ToolCall[] | undefined, cardService: CardService): Promise<ProcessedToolCall[]> {
-  if (!toolCalls || toolCalls.length === 0) {
-    return [];
-  }
-
-  const results: ProcessedToolCall[] = [];
-
-  for (const call of toolCalls) {
-    if (call.name === 'createCard') {
-      const { word, translation } = call.args;
-      
-      try {
-        const newCard = await cardService.addCard({
-          front: word,
-          back: translation
-        });
-        
-        results.push({
-          id: call.id,
-          type: call.type,
-          name: call.name,
-          status: 'success',
-          result: newCard
-        });
-      } catch (error) {
-        console.error('Error creating card:', error);
-        results.push({
-          id: call.id,
-          type: call.type,
-          name: call.name,
-          status: 'error',
-          error: 'Failed to create card'
-        });
-      }
-    }
-  }
-  
-  return results;
 }
 
 export default withAuth(handler);

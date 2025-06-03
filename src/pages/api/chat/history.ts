@@ -2,10 +2,7 @@ import { NextApiResponse } from 'next';
 import { ChatHistoryService } from '@/services/chatHistoryService';
 import { withAuth, AuthenticatedRequest } from '@/utils/auth';
 
-async function handler(
-  req: AuthenticatedRequest,
-  res: NextApiResponse
-) {
+async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   const { username } = req.user;
   const chatHistoryService = new ChatHistoryService(username);
 
@@ -14,33 +11,48 @@ async function handler(
       const { sessionId } = req.query;
 
       if (sessionId && typeof sessionId === 'string') {
-        const session = chatHistoryService.getChatSession(sessionId);
-        
+        const session = await chatHistoryService.getChatSession(sessionId);
         if (!session) {
-          return res.status(404).json({ message: 'Session not found' });
+          return res.status(404).json({ error: 'Chat session not found' });
         }
-        
         return res.status(200).json(session);
       } else {
-        const sessions = chatHistoryService.getAllChatSessions();
-        const latestSession = sessions.length > 0 ? sessions[0] : null;
-        
-        return res.status(200).json(latestSession || { id: null, messages: [] });
+        const sessions = await chatHistoryService.getAllChatSessions();
+        return res.status(200).json(sessions);
       }
     } catch (error) {
       console.error('Error fetching chat history:', error);
-      return res.status(500).json({ message: 'Internal server error' });
+      return res.status(500).json({ error: 'Failed to fetch chat history' });
     }
   } else if (req.method === 'POST') {
     try {
-      const newSession = chatHistoryService.createChatSession();
+      const newSession = await chatHistoryService.createChatSession();
       return res.status(201).json(newSession);
     } catch (error) {
-      console.error('Error creating new chat session:', error);
-      return res.status(500).json({ message: 'Internal server error' });
+      console.error('Error creating chat session:', error);
+      return res.status(500).json({ error: 'Failed to create chat session' });
+    }
+  } else if (req.method === 'DELETE') {
+    try {
+      const { sessionId } = req.query;
+      
+      if (!sessionId || typeof sessionId !== 'string') {
+        return res.status(400).json({ error: 'Session ID is required' });
+      }
+
+      const deleted = await chatHistoryService.deleteChatSession(sessionId);
+      if (!deleted) {
+        return res.status(404).json({ error: 'Chat session not found' });
+      }
+      
+      return res.status(200).json({ message: 'Chat session deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting chat session:', error);
+      return res.status(500).json({ error: 'Failed to delete chat session' });
     }
   } else {
-    return res.status(405).json({ message: 'Method not allowed' });
+    res.setHeader('Allow', ['GET', 'POST', 'DELETE']);
+    res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 }
 

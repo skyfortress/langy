@@ -19,7 +19,7 @@ export default async function handler(
     }
 
     const userService = new UserService();
-    const registerResponse = userService.register(username, password);
+    const registerResponse = await userService.register(username, password);
 
     if (registerResponse.success) {
       setAuthCookie(res, username);
