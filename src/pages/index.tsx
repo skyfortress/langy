@@ -118,7 +118,12 @@ export default function Home() {
 
       const data = await response.json();
       setAiInput("");
-      setSuccess(data.message);
+      
+      if (data.cards && data.cards.length > 0) {
+        const cardsList = data.cards.map((card: Card) => `${card.front} → ${card.back}`).join(', ');
+        setSuccess(`Generated ${data.cards.length} new cards: ${cardsList}`);
+      }
+      
       fetchCards();
       fetchCardStats();
     } catch (error) {
