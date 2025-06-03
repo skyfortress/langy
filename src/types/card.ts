@@ -6,7 +6,7 @@ export interface Card {
   username: string; // New property for username
   front: string; // Portuguese
   back: string;  // English
-  audioPath?: string; // Path to audio file
+  audioFileId?: string; // New property for GridFS audio file ID
   lastReviewed?: Date;
   nextReviewDue?: Date;
   reviewCount: number;

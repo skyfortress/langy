@@ -1,5 +1,3 @@
-import fs from 'fs';
-import path from 'path';
 import { TTSResponse, TTSQueueItem } from '@/types/tts';
 import { 
   PollyClient, 
@@ -10,17 +8,10 @@ import {
   VoiceId,
   LanguageCode
 } from '@aws-sdk/client-polly';
+import { storeAudioInGridFS } from './gridfsService';
 
-const AUDIO_DIR = path.join(process.cwd(), 'public', 'audio');
 const requestQueue: TTSQueueItem[] = [];
 let isProcessing = false;
-
-const ensureAudioDir = (username?: string) => {
-  const baseDir = username ? path.join(AUDIO_DIR, username) : AUDIO_DIR;
-  if (!fs.existsSync(baseDir)) {
-    fs.mkdirSync(baseDir, { recursive: true });
-  }
-};
 
 const processNextRequest = async () => {
   if (isProcessing || requestQueue.length === 0) {
@@ -61,16 +52,13 @@ const processRequest = async (text: string, username?: string): Promise<TTSRespo
       throw new Error('No audio stream returned from AWS Polly');
     }
 
-    ensureAudioDir(username);
-    const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}.mp3`;
-    const userDir = username ? path.join(AUDIO_DIR, username) : AUDIO_DIR;
-    const filePath = path.join(userDir, fileName);
-
     const audioData = await response.AudioStream.transformToByteArray();
-    fs.writeFileSync(filePath, Buffer.from(audioData));
+    const audioBuffer = Buffer.from(audioData);
     
-    const relativePath = username ? `/audio/${username}/${fileName}` : `/audio/${fileName}`;
-    return { audioPath: relativePath };
+    const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}.mp3`;
+    const fileId = await storeAudioInGridFS(audioBuffer, fileName, username);
+    
+    return { audioFileId: fileId };
   } catch (error) {
     console.error('Error generating audio:', error);
     return { 

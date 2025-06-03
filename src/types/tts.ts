@@ -1,5 +1,5 @@
 export interface TTSResponse {
-  audioPath?: string;
+  audioFileId?: string;
   error?: string;
 }
 

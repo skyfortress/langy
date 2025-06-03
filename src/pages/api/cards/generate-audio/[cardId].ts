@@ -33,13 +33,13 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         });
       }
       
-      if (audioResponse.audioPath) {
-        card.audioPath = audioResponse.audioPath;
+      if (audioResponse.audioFileId) {
+        card.audioFileId = audioResponse.audioFileId;
         await cardService.updateCard(card);
         
         return res.status(200).json({ 
           success: true, 
-          audioPath: audioResponse.audioPath 
+          audioFileId: audioResponse.audioFileId
         });
       } else {
         return res.status(500).json({

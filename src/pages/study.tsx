@@ -5,11 +5,21 @@ import { Geist } from "next/font/google";
 import { Button, Progress, message } from "antd";
 import { IoVolumeHigh } from "react-icons/io5";
 import { AiOutlineHome, AiOutlineSound } from "react-icons/ai";
+import { getAudioPath } from "@/utils/audioUtils";
 
 const geist = Geist({
   variable: "--font-geist",
   subsets: ["latin"],
 });
+
+const qualityLabels = [
+  { value: ReviewQuality.CompleteBlackout, label: "Complete Blackout", description: "I don't remember seeing this at all", color: "#dc2626", shortcut: "1" },
+  { value: ReviewQuality.IncorrectButRecognized, label: "Incorrect (Recognized)", description: "Wrong answer, but I recognized it", color: "#ef4444", shortcut: "2" },
+  { value: ReviewQuality.IncorrectButEasyRecall, label: "Incorrect (Easy Recall)", description: "Wrong, but I almost had it", color: "#f97316", shortcut: "3" },
+  { value: ReviewQuality.CorrectWithDifficulty, label: "Correct (Difficult)", description: "I got it right, but with effort", color: "#eab308", shortcut: "4" },
+  { value: ReviewQuality.CorrectWithSomeHesitation, label: "Correct (Hesitation)", description: "I recalled with slight hesitation", color: "#22c55e", shortcut: "5" },
+  { value: ReviewQuality.PerfectRecall, label: "Perfect Recall", description: "I knew it instantly", color: "#059669", shortcut: "6" }
+];
 
 export default function Study() {
   const [session, setSession] = useState<StudySession | null>(null);
@@ -51,21 +61,43 @@ export default function Study() {
     }
   };
 
-  const handleReveal = () => {
+  const getCurrentCard = useCallback((): Card | null => {
+    if (!session || session.cards.length === 0) return null;
+    return session.cards[session.currentCardIndex];
+  }, [session]);
+
+  const playAudio = useCallback(() => {
+    const currentCard = getCurrentCard();
+    const audioPath = getAudioPath(currentCard!);
+    if (!audioPath) {
+      return;
+    }
+    
+    if (!audioRef.current) {
+      audioRef.current = new Audio(audioPath);
+      audioRef.current.onended = () => setIsPlaying(false);
+      audioRef.current.onpause = () => setIsPlaying(false);
+      audioRef.current.onplay = () => setIsPlaying(true);
+    } else {
+      audioRef.current.src = audioPath;
+    }
+    
+    audioRef.current.play().catch(error => {
+      console.error('Failed to play audio:', error);
+    });
+  }, [getCurrentCard]);
+
+  const handleReveal = useCallback(() => {
     setShowAnswer(true);
     
     const card = getCurrentCard();
-    if (card?.audioPath && ((session?.mode === 'front-to-back') || (session?.mode === 'back-to-front'))) {
+    const audioPath = getAudioPath(card!);
+    if (audioPath && ((session?.mode === 'front-to-back') || (session?.mode === 'back-to-front'))) {
       playAudio();
     }
-  };
+  }, [getCurrentCard, playAudio, session?.mode]);
 
-  const getCurrentCard = (): Card | null => {
-    if (!session || session.cards.length === 0) return null;
-    return session.cards[session.currentCardIndex];
-  };
-
-  const handleAnswer = async (quality: ReviewQuality) => {
+  const handleAnswer = useCallback(async (quality: ReviewQuality) => {
     if (!session || !getCurrentCard()) return;
     
     const currentCard = getCurrentCard();
@@ -107,22 +139,13 @@ export default function Study() {
       console.error('Error recording review:', error);
       setError('Failed to record your answer');
     }
-  };
+  }, [getCurrentCard, session]);
 
   const restart = () => {
     setCompleted(false);
     setShowAnswer(false);
     fetchStudySession();
   };
-
-  const qualityLabels = [
-    { value: ReviewQuality.CompleteBlackout, label: "Complete Blackout", description: "I don't remember seeing this at all", color: "#dc2626", shortcut: "1" },
-    { value: ReviewQuality.IncorrectButRecognized, label: "Incorrect (Recognized)", description: "Wrong answer, but I recognized it", color: "#ef4444", shortcut: "2" },
-    { value: ReviewQuality.IncorrectButEasyRecall, label: "Incorrect (Easy Recall)", description: "Wrong, but I almost had it", color: "#f97316", shortcut: "3" },
-    { value: ReviewQuality.CorrectWithDifficulty, label: "Correct (Difficult)", description: "I got it right, but with effort", color: "#eab308", shortcut: "4" },
-    { value: ReviewQuality.CorrectWithSomeHesitation, label: "Correct (Hesitation)", description: "I recalled with slight hesitation", color: "#22c55e", shortcut: "5" },
-    { value: ReviewQuality.PerfectRecall, label: "Perfect Recall", description: "I knew it instantly", color: "#059669", shortcut: "6" }
-  ];
 
   const currentCard = getCurrentCard();
   const cardFront = session?.mode === 'front-to-back' 
@@ -149,7 +172,7 @@ export default function Study() {
         handleAnswer(qualityOption.value);
       }
     }
-  }, [showAnswer, qualityLabels]);
+  }, [showAnswer, handleAnswer, handleReveal]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyPress);
@@ -158,25 +181,7 @@ export default function Study() {
     };
   }, [handleKeyPress]);
 
-  const playAudio = () => {
-    const currentCard = getCurrentCard();
-    if (!currentCard?.audioPath) return;
-    
-    if (!audioRef.current) {
-      audioRef.current = new Audio(currentCard.audioPath);
-      audioRef.current.onended = () => setIsPlaying(false);
-      audioRef.current.onpause = () => setIsPlaying(false);
-      audioRef.current.onplay = () => setIsPlaying(true);
-    } else {
-      audioRef.current.src = currentCard.audioPath;
-    }
-    
-    audioRef.current.play().catch(error => {
-      console.error('Failed to play audio:', error);
-    });
-  };
-
-  const generateAudio = async () => {
+  const generateAudio = useCallback(async () => {
     const currentCard = getCurrentCard();
     if (!currentCard) {
       return;
@@ -195,8 +200,11 @@ export default function Study() {
       
       const data = await response.json();
       
-      if (data.success && data.audioPath) {
-        const updatedCard = { ...currentCard, audioPath: data.audioPath };
+      if (data.success && data.audioFileId) {
+        const updatedCard = { 
+          ...currentCard, 
+          audioFileId: data.audioFileId
+        };
         
         if (session) {
           const updatedCards = [...session.cards];
@@ -209,12 +217,13 @@ export default function Study() {
         
         message.success('Audio generated successfully');
         
+        const audioPath = `/api/audio/${data.audioFileId}`;
         if (audioRef.current) {
-          audioRef.current.src = data.audioPath;
+          audioRef.current.src = audioPath;
           audioRef.current.play()
             .catch(error => console.error('Failed to play audio:', error));
         } else {
-          audioRef.current = new Audio(data.audioPath);
+          audioRef.current = new Audio(audioPath);
           audioRef.current.onended = () => setIsPlaying(false);
           audioRef.current.onpause = () => setIsPlaying(false);
           audioRef.current.onplay = () => setIsPlaying(true);
@@ -230,7 +239,7 @@ export default function Study() {
     } finally {
       setGeneratingAudio(false);
     }
-  };
+  }, [getCurrentCard, session]);
 
   useEffect(() => {
     // Reset audio when card changes
@@ -245,18 +254,18 @@ export default function Study() {
 
   if (loading) {
     return (
-      <div className={`${geist.className} min-h-screen bg-slate-50 p-4 md:p-8 flex items-center justify-center`}>
-        <p className="text-slate-600">Loading study session...</p>
+      <div className={`${geist.className} min-h-screen bg-slate-50 p-4 md:p-8 flex flex-col items-center justify-center`}>
+        <p className="text-slate-600 text-base sm:text-base">Loading study session...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className={`${geist.className} min-h-screen bg-slate-50 p-4 md:p-8`}>
-        <div className="max-w-lg mx-auto bg-white p-6 rounded-lg shadow-md">
-          <h1 className="text-2xl font-bold text-slate-800 mb-4">Error</h1>
-          <p className="text-slate-600 mb-6">{error}</p>
+      <div className={`${geist.className} min-h-screen bg-slate-50 p-4 md:p-8 flex flex-col`}>
+        <div className="max-w-lg mx-auto bg-white p-6 rounded-lg shadow-md w-full">
+          <h1 className="text-2xl md:text-2xl font-bold text-slate-800 mb-4">Error</h1>
+          <p className="text-slate-600 text-base sm:text-base mb-6">{error}</p>
           <Link href="/">
             <Button type="primary" icon={<AiOutlineHome />}>Back to Home</Button>
           </Link>
@@ -267,9 +276,9 @@ export default function Study() {
 
   if (completed) {
     return (
-      <div className={`${geist.className} min-h-screen bg-slate-50 p-4 md:p-8`}>
-        <div className="max-w-lg mx-auto bg-white p-6 rounded-lg shadow-md">
-          <h1 className="text-2xl font-bold text-slate-800 mb-4">Study Completed!</h1>
+      <div className={`${geist.className} min-h-screen bg-slate-50 p-4 md:p-8 flex flex-col`}>
+        <div className="max-w-lg mx-auto bg-white p-6 rounded-lg shadow-md w-full">
+          <h1 className="text-2xl md:text-2xl font-bold text-slate-800 mb-4">Study Completed!</h1>
           <p className="text-slate-600 mb-2">
             You've reviewed all {stats.total} cards.
           </p>
@@ -294,9 +303,9 @@ export default function Study() {
   }
 
   return (
-    <div className={`${geist.className} min-h-screen bg-slate-50 p-4 md:p-8`}>
-      <div className="max-w-lg mx-auto">
-        <header className="mb-6 flex justify-between items-center">
+    <div className={`${geist.className} min-h-screen bg-slate-50 p-4 md:p-8 flex flex-col`}>
+      <div className="max-w-lg mx-auto w-full flex flex-col flex-grow">
+        <header className="mb-4 flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-slate-800">Study Mode</h1>
             <p className="text-slate-600">
@@ -313,15 +322,15 @@ export default function Study() {
           </div>
         </header>
 
-        <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-          <div className="min-h-[200px] flex flex-col items-center justify-center">
+        <div className="bg-white p-6 rounded-lg shadow-md mb-4 flex-grow flex flex-col">
+          <div className="flex flex-col items-center justify-center flex-grow">
             <div className="mb-8 text-center">
               <p className="text-slate-500 text-sm mb-2">
                 {session?.mode === 'front-to-back' ? 'European Portuguese' : 'English'}
               </p>
               <div className="flex items-center justify-center gap-2">
                 <p className="text-2xl font-medium">{cardFront}</p>
-                {(session?.mode === 'front-to-back' || showAnswer) && getCurrentCard()?.audioPath ? (
+                {(session?.mode === 'front-to-back' || showAnswer) && getCurrentCard()?.audioFileId ? (
                   <Button
                     type={isPlaying ? "primary" : "default"}
                     shape="circle"
@@ -348,8 +357,8 @@ export default function Study() {
                   {session?.mode === 'front-to-back' ? 'English' : 'European Portuguese'}
                 </p>
                 <div className="flex items-center justify-center gap-2 mb-8">
-                  <p className="text-xl font-medium">{cardBack}</p>
-                  {session?.mode === 'back-to-front' && getCurrentCard()?.audioPath && (
+                  <p className="text-2xl font-medium">{cardBack}</p>
+                  {session?.mode === 'back-to-front' && getCurrentCard()?.audioFileId && (
                     <Button
                       type={isPlaying ? "primary" : "default"}
                       shape="circle"
@@ -362,18 +371,24 @@ export default function Study() {
                 
                 <p className="text-sm text-slate-600 mb-4">How well did you know this card?</p>
                 
-                <div className="grid grid-cols-3 gap-3 mb-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">
                   {qualityLabels.map((option) => (
                     <Button
                       key={option.value}
                       onClick={() => handleAnswer(option.value)}
-                      className="hover:opacity-90 transition-all transform hover:scale-105"
-                      style={{ color: 'white', height: 'auto', padding: '12px 8px', backgroundColor: option.color }}
+                      className="hover:opacity-90 transition-all"
+                      style={{ 
+                        color: 'white', 
+                        height: 'auto', 
+                        padding: '8px 4px', 
+                        backgroundColor: option.color,
+                        width: '100%'
+                      }}
                       title={option.description}
                     >
                       <div className="flex flex-col items-center">
-                        <span className="block text-xl font-bold mb-1">{option.shortcut}</span>
-                        <span className="block text-xs">{option.label}</span>
+                        <span className="block text-lg font-bold">{option.shortcut}</span>
+                        <span className="block text-xs whitespace-normal">{option.label}</span>
                       </div>
                     </Button>
                   ))}
@@ -395,7 +410,7 @@ export default function Study() {
           </div>
         </div>
 
-        <div className="text-center">
+        <div className="text-center mb-4">
           <p className="text-sm text-slate-500">
             Progress: {Math.round(((session?.currentCardIndex || 0) / (session?.cards.length || 1)) * 100)}%
           </p>
