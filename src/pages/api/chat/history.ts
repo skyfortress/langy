@@ -18,7 +18,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         return res.status(200).json(session);
       } else {
         const sessions = await chatHistoryService.getAllChatSessions();
-        return res.status(200).json(sessions);
+        return res.status(200).json(sessions[0]);
       }
     } catch (error) {
       console.error('Error fetching chat history:', error);
