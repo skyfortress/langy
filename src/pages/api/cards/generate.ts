@@ -33,13 +33,23 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
       }
     }
 
+    if (createdCards.length === 0) {
+      return res.status(422).json({ 
+        message: 'No cards could be generated from the provided text',
+        details: 'Try providing longer text or text with more vocabulary'
+      });
+    }
+
     res.status(200).json({
       message: `Generated ${createdCards.length} new cards`,
       cards: createdCards
     });
   } catch (error) {
     console.error('Error generating cards:', error);
-    res.status(500).json({ message: 'Failed to generate cards' });
+    res.status(500).json({ 
+      message: 'Failed to generate cards',
+      details: error instanceof Error ? error.message : 'Unknown error occurred'
+    });
   }
 }
 

@@ -111,12 +111,15 @@ export default function Home() {
         body: JSON.stringify({ text: aiInput }),
       });
 
+      const data = await response.json();
+      
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to generate flashcards");
+        const errorMessage = data.details 
+          ? `${data.message}: ${data.details}`
+          : data.message || "Failed to generate flashcards";
+        throw new Error(errorMessage);
       }
 
-      const data = await response.json();
       setAiInput("");
       
       if (data.cards && data.cards.length > 0) {

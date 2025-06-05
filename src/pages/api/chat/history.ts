@@ -18,6 +18,9 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         return res.status(200).json(session);
       } else {
         const sessions = await chatHistoryService.getAllChatSessions();
+        if (sessions.length === 0) {
+          return res.status(200).json(null);
+        }
         return res.status(200).json(sessions[0]);
       }
     } catch (error) {

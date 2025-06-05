@@ -30,11 +30,14 @@ const Chat: React.FC = () => {
         const response = await fetch('/api/chat/history');
         
         if (response.ok) {
-          const data = await response.json() as ChatSession;
+          const data = await response.json() as ChatSession | null;
           
-          if (data.id) {
+          if (data && data.id) {
             setSessionId(data.id);
             setMessages(data.messages);
+          } else {
+            // Create a new session if none exists
+            await handleNewChat();
           }
         }
       } catch (error) {
