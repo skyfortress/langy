@@ -1,13 +1,13 @@
 # Langy: Portuguese Language Learning App
 
-Langy is a modern web application designed to help users learn Portuguese through flashcards with spaced repetition, AI-powered language tutoring, and interactive study tools.
+Langy is a modern web application designed to help users learn Portuguese through flashcards with spaced repetition, AI-generated vocabulary extraction, and interactive study tools.
 
 ## Features
 
 - **Flashcard System**: Create and review Portuguese vocabulary using a spaced repetition algorithm
 - **AI-Generated Flashcards**: Automatically generate flashcards from Portuguese text
 - **Study Mode**: Practice cards with both Portuguese-to-English and English-to-Portuguese modes
-- **AI Language Tutor**: Chat with an AI tutor to practice conversational Portuguese
+- **Flashcard MCP Server**: Let external MCP clients list and add flashcards
 - **Text-to-Speech**: Listen to correct pronunciation of Portuguese words
 - **Progress Tracking**: Monitor your learning progress with detailed statistics
 
@@ -44,6 +44,9 @@ Langy is a modern web application designed to help users learn Portuguese throug
    ```
    # AI Service API Keys
    GOOGLE_API_KEY=your_google_api_key
+
+   # MCP flashcard access
+   MCP_USERNAME=your_langy_username
    
    # Text-to-Speech API Keys
    AWS_ACCESS_KEY_ID=your_aws_access_key
@@ -72,11 +75,11 @@ Langy is a modern web application designed to help users learn Portuguese throug
 2. Test your recall in both Portuguese-to-English and English-to-Portuguese directions
 3. Track your progress with the spaced repetition system
 
-### Practicing Conversation
+### Using MCP
 
-1. Click "Practice with AI Tutor" to start a chat session
-2. Engage in conversation with an AI tutor designed to help you practice Portuguese
-3. Receive feedback and corrections on your language use
+1. Set `MCP_USERNAME` to the Langy user whose flashcards should be exposed
+2. Start Langy and point your MCP client at `POST /api/mcp`
+3. Use `list_flashcards` and `add_flashcard` from the external client
 
 ## Development
 
@@ -87,7 +90,6 @@ Langy is a modern web application designed to help users learn Portuguese throug
 - `/src/services` - Service integrations (AI, TTS, etc.)
 - `/src/types` - TypeScript type definitions
 - `/src/utils` - Utility functions
-- `/data` - JSON data storage
 
 ### Scripts
 
@@ -107,9 +109,7 @@ Langy is a modern web application designed to help users learn Portuguese throug
 
 # Langy - Language Learning Flashcard App
 
-## Database Migration to MongoDB
-
-This project has been migrated from JSON file storage to MongoDB for better scalability and performance.
+## MongoDB
 
 ### Prerequisites
 
@@ -129,20 +129,6 @@ This project has been migrated from JSON file storage to MongoDB for better scal
    MONGODB_URI=mongodb://root:root@localhost:27021/langy?authSource=admin
    ```
 
-### Migration from JSON to MongoDB
-
-If you have existing JSON data in the `data/` directory, run the migration script:
-
-```bash
-yarn migrate
-```
-
-This will:
-- Connect to your MongoDB instance
-- Create a single `cards` collection
-- Transfer all existing card data with username property
-- Preserve all SM-2 algorithm data and review history
-
 ### Database Structure
 
 Single `cards` collection containing documents with:
@@ -159,6 +145,7 @@ All CardService methods are now asynchronous. The following APIs have been updat
 - `POST /api/cards/create` - Create new card
 - `DELETE /api/cards/[cardId]` - Delete card
 - `POST /api/cards/generate` - Generate cards from text
+- `POST /api/mcp` - MCP endpoint exposing flashcard list and create tools
 - `POST /api/study/review` - Record study review
 - `GET /api/study` - Get study session
 - `GET /api/cards/stats` - Get card statistics
@@ -169,9 +156,6 @@ All CardService methods are now asynchronous. The following APIs have been updat
 ```bash
 # Start MongoDB
 docker-compose up -d mongodb
-
-# Run migration (if needed)
-yarn migrate
 
 # Start development server
 yarn dev

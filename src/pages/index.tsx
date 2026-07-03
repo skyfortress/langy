@@ -223,18 +223,6 @@ export default function Home() {
                   English-to-Portuguese modes.
                 </p>
               </div>
-
-              <div className="bg-white p-6 rounded-lg shadow-md">
-                <h2 className="text-xl font-semibold mb-4">Language Chat</h2>
-                <Link href="/chat" className="block w-full mb-4">
-                  <Button type="primary" block style={{ backgroundColor: '#9333ea' }}>
-                    Practice with AI Tutor
-                  </Button>
-                </Link>
-                <p className="text-sm text-slate-600">
-                  Chat with an AI language tutor to practice conversation skills.
-                </p>
-              </div>
             </div>
           </div>
 
